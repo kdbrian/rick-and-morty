@@ -1,0 +1,189 @@
+name: Release Notes
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'beta-v*.*.*'
+      - 'release-*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name (leave empty for latest)'
+        required: false
+        type: string
+      flavor:
+        description: 'Flavor for release notes'
+        required: false
+        type: choice
+        options:
+          - beta
+          - beta-feature
+          - live
+        default: 'beta'
+
+jobs:
+  generate-notes:
+    name: Generate Release Notes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine tag and flavor
+        id: info
+        run: |
+          # Determine tag
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          
+          # Determine flavor from tag or input
+          if [ -n "${{ github.event.inputs.flavor }}" ]; then
+            FLAVOR="${{ github.event.inputs.flavor }}"
+          else
+            if [[ "$TAG" == *"beta"* ]]; then
+              FLAVOR="beta"
+            else
+              FLAVOR="live"
+            fi
+          fi
+          
+          # Get version from tag (remove 'v' prefix and flavor prefix)
+          VERSION=$(echo $TAG | sed 's/^v//' | sed 's/^beta-v//' | sed 's/^release-//')
+          
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "flavor=$FLAVOR" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          # Get previous tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "")
+          echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+
+      - name: Collect commits
+        id: commits
+        run: |
+          TAG="${{ steps.info.outputs.tag }}"
+          PREVIOUS_TAG="${{ steps.info.outputs.previous_tag }}"
+          
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" $TAG)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..$TAG)
+          fi
+          
+          # Save to file for processing
+          echo "$COMMITS" > commits.txt
+          
+          # Count commits
+          COMMIT_COUNT=$(echo "$COMMITS" | wc -l)
+          echo "count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Generate AI summary with Gemini
+        id: summary
+        run: |
+          COMMITS=$(cat commits.txt)
+          
+          PROMPT="You are a technical writer creating release notes for an Android application.
+
+  Based on the following git commit messages, generate professional release notes.
+  Group changes into categories and use clear language.
+
+Format:
+  ## What's New
+  - Feature highlights
+
+  ## Improvements
+  - Enhancements made
+
+  ## Bug Fixes
+  - Issues resolved
+
+Commit messages:
+  $COMMITS
+  
+  Generate release notes:"
+  
+  RESPONSE=$(curl -s -X POST \
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${{ secrets.GEMINI_API_KEY }}" \
+-H 'Content-Type: application/json' \
+  -d "{
+  \"contents\":[{
+\"parts\":[{\"text\": $(echo "$PROMPT" | jq -Rs .)}]
+}],
+\"generationConfig\": {
+  \"temperature\": 0.7,
+  \"maxOutputTokens\": 1024
+}
+}")
+          
+          AI_NOTES=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // "Failed to generate summary"')
+  echo "$AI_NOTES" > ai_summary.md
+
+- name: Create release notes file
+  run: |
+    TAG="${{ steps.info.outputs.tag }}"
+    FLAVOR="${{ steps.info.outputs.flavor }}"
+    VERSION="${{ steps.info.outputs.version }}"
+    PREVIOUS_TAG="${{ steps.info.outputs.previous_tag }}"
+    
+    # Create release_notes directory if it doesn't exist
+    mkdir -p release_notes
+    
+    # Filename: version_flavor.md (e.g., 1.0.0_beta.md)
+    NOTES_FILE="release_notes/${VERSION}_${FLAVOR}.md"
+    
+    cat > "$NOTES_FILE" << 'EOF'
+    # Release Notes - $VERSION ($FLAVOR)
+    
+    **Tag:** $TAG
+    **Date:** $(date +"%Y-%m-%d")
+    **Commits:** ${{ steps.commits.outputs.count }}
+    
+    ---
+    
+    EOF
+    
+    # Add AI-generated summary
+    cat ai_summary.md >> "$NOTES_FILE"
+    
+    echo "" >> "$NOTES_FILE"
+    echo "---" >> "$NOTES_FILE"
+    echo "" >> "$NOTES_FILE"
+    echo "## All Commits" >> "$NOTES_FILE"
+    echo "" >> "$NOTES_FILE"
+    cat commits.txt >> "$NOTES_FILE"
+    
+    if [ -n "$PREVIOUS_TAG" ]; then
+      echo "" >> "$NOTES_FILE"
+      echo "---" >> "$NOTES_FILE"
+      echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...$TAG" >> "$NOTES_FILE"
+    fi
+    
+    # Substitute variables
+    sed -i "s|\$VERSION|$VERSION|g" "$NOTES_FILE"
+    sed -i "s|\$FLAVOR|$FLAVOR|g" "$NOTES_FILE"
+    sed -i "s|\$TAG|$TAG|g" "$NOTES_FILE"
+    
+    echo "notes_file=$NOTES_FILE" >> $GITHUB_ENV
+
+- name: Commit release notes to repository
+  run: |
+    git config user.name "github-actions[bot]"
+    git config user.email "github-actions[bot]@users.noreply.github.com"
+    git add release_notes/
+    git commit -m "docs: add release notes for ${{ steps.info.outputs.version }} (${{ steps.info.outputs.flavor }})" || echo "No changes to commit"
+    git push origin HEAD:main || echo "Failed to push, might need to handle this differently"
+
+- name: Upload release notes artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: release-notes-${{ steps.info.outputs.version }}-${{ steps.info.outputs.flavor }}
+    path: release_notes/${{ steps.info.outputs.version }}_${{ steps.info.outputs.flavor }}.md
+    retention-days: 90

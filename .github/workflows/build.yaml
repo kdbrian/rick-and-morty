@@ -1,0 +1,125 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - 'feature/**'
+      - 'release/**'
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: 'Build flavor'
+        required: true
+        type: choice
+        options:
+          - beta
+          - beta-feature
+          - live
+        default: 'beta'
+      build_type:
+        description: 'Build type'
+        required: true
+        type: choice
+        options:
+          - debug
+          - release
+        default: 'debug'
+
+jobs:
+  build:
+    name: Build APK/AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Decode keystore (for release builds)
+        if: github.event.inputs.build_type == 'release' || github.ref_type == 'tag'
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > $GITHUB_WORKSPACE/keystore.jks
+
+      - name: Determine build configuration
+        id: config
+        run: |
+          if [ -n "${{ github.event.inputs.flavor }}" ]; then
+            FLAVOR="${{ github.event.inputs.flavor }}"
+            BUILD_TYPE="${{ github.event.inputs.build_type }}"
+          else
+            # Default to beta debug for automatic builds
+            FLAVOR="beta"
+            BUILD_TYPE="debug"
+          fi
+          
+          # Capitalize for Gradle task
+          FLAVOR_CAP=$(echo $FLAVOR | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | sed 's/ //g')
+          BUILD_TYPE_CAP=$(echo $BUILD_TYPE | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+          
+          echo "flavor=$FLAVOR" >> $GITHUB_OUTPUT
+          echo "build_type=$BUILD_TYPE" >> $GITHUB_OUTPUT
+          echo "gradle_task=${FLAVOR_CAP}${BUILD_TYPE_CAP}" >> $GITHUB_OUTPUT
+
+      - name: Build APK (Debug)
+        if: steps.config.outputs.build_type == 'debug'
+        run: ./gradlew assemble${{ steps.config.outputs.gradle_task }} --stacktrace
+
+      - name: Build AAB (Release)
+        if: steps.config.outputs.build_type == 'release'
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew bundle${{ steps.config.outputs.gradle_task }} --stacktrace
+
+      - name: Upload APK artifact
+        if: steps.config.outputs.build_type == 'debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ steps.config.outputs.flavor }}-debug
+          path: app/build/outputs/apk/${{ steps.config.outputs.flavor }}/debug/*.apk
+          retention-days: 30
+
+      - name: Upload AAB artifact
+        if: steps.config.outputs.build_type == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: aab-${{ steps.config.outputs.flavor }}-release
+          path: app/build/outputs/bundle/${{ steps.config.outputs.gradle_task }}/*.aab
+          retention-days: 90
+
+      - name: Upload mapping file
+        if: steps.config.outputs.build_type == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping-${{ steps.config.outputs.flavor }}-release
+          path: app/build/outputs/mapping/${{ steps.config.outputs.gradle_task }}/mapping.txt
+          retention-days: 180

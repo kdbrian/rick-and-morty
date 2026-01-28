@@ -1,0 +1,141 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'beta-v*.*.*'
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: 'Build flavor to release'
+        required: true
+        type: choice
+        options:
+          - beta
+          - beta-feature
+          - live
+        default: 'beta'
+
+jobs:
+  release:
+    name: Release to Firebase App Distribution
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > $GITHUB_WORKSPACE/keystore.jks
+
+      - name: Determine flavor
+        id: flavor
+        run: |
+          if [ -n "${{ github.event.inputs.flavor }}" ]; then
+            FLAVOR="${{ github.event.inputs.flavor }}"
+          else
+            # Determine from tag
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            if [[ "$TAG_NAME" == *"beta"* ]]; then
+              FLAVOR="beta"
+            else
+              FLAVOR="live"
+            fi
+          fi
+          
+          # Capitalize for Gradle task
+          FLAVOR_CAP=$(echo $FLAVOR | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | sed 's/ //g')
+          
+          echo "flavor=$FLAVOR" >> $GITHUB_OUTPUT
+          echo "gradle_task=${FLAVOR_CAP}Release" >> $GITHUB_OUTPUT
+
+      - name: Get version info
+        id: version
+        run: |
+          VERSION_NAME=$(grep "versionName" app/build.gradle | awk '{print $2}' | tr -d '"' | head -1)
+          VERSION_CODE=$(grep "versionCode" app/build.gradle | awk '{print $2}' | head -1)
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+
+      - name: Build Release AAB
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew bundle${{ steps.flavor.outputs.gradle_task }} --stacktrace
+
+      - name: Find AAB file
+        id: aab
+        run: |
+          AAB_PATH=$(find app/build/outputs/bundle -name "*.aab" | head -1)
+          echo "path=$AAB_PATH" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          FLAVOR="${{ steps.flavor.outputs.flavor }}"
+          VERSION="${{ steps.version.outputs.version_name }}"
+          
+          # Check if release notes file exists
+          NOTES_FILE="release_notes/${VERSION}_${FLAVOR}.md"
+          
+          if [ -f "$NOTES_FILE" ]; then
+            # Extract summary section only (between ## What's New and ---)
+            NOTES=$(awk '/^## What/{flag=1; next} /^---/{flag=0} flag' "$NOTES_FILE" | head -20)
+          else
+            # Fallback to recent commits
+            LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+            if [ -n "$LAST_TAG" ]; then
+              NOTES=$(git log $LAST_TAG..HEAD --pretty=format:"- %s" | head -10)
+            else
+              NOTES=$(git log --pretty=format:"- %s" -5)
+            fi
+          fi
+          
+          FULL_NOTES="Version: $VERSION (Build ${{ steps.version.outputs.version_code }})
+Flavor: $FLAVOR
+  
+  $NOTES"
+  
+  echo "notes<<EOF" >> $GITHUB_OUTPUT
+  echo "$FULL_NOTES" >> $GITHUB_OUTPUT
+  echo "EOF" >> $GITHUB_OUTPUT
+
+- name: Upload to Firebase App Distribution
+  uses: wzieba/Firebase-Distribution-Github-Action@v1
+  with:
+    appId: ${{ secrets.FIREBASE_APP_ID }}
+    serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_CREDENTIALS }}
+    groups: ${{ steps.flavor.outputs.flavor }}-testers
+    file: ${{ steps.aab.outputs.path }}
+    releaseNotes: ${{ steps.notes.outputs.notes }}
+
+
+- name: Upload AAB artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: aab-${{ steps.flavor.outputs.flavor }}-${{ steps.version.outputs.version_name }}
+    path: ${{ steps.aab.outputs.path }}
+    retention-days: 90
+
+- name: Upload mapping file
+  uses: actions/upload-artifact@v4
+  with:
+    name: mapping-${{ steps.flavor.outputs.flavor }}-${{ steps.version.outputs.version_name }}
+    path: app/build/outputs/mapping/${{ steps.flavor.outputs.gradle_task }}/mapping.txt
+    retention-days: 180
