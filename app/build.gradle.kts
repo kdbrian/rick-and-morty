@@ -21,8 +21,49 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+
+    flavorDimensions += "environment"
+
     productFlavors {
 
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+
+            resValue("string", "app_name", "MyApp (Dev)")
+            buildConfigField("String", "ENVIRONMENT", "\"dev\"")
+            buildConfigField("Boolean", "ENABLE_LOGGING", "true")
+        }
+
+        create("beta") {
+            dimension = "environment"
+            applicationIdSuffix = ".beta"
+            versionNameSuffix = "-beta"
+
+            resValue("string", "app_name", "MyApp (Beta)")
+            buildConfigField("String", "ENVIRONMENT", "\"beta\"")
+            buildConfigField("Boolean", "ENABLE_LOGGING", "true")
+        }
+
+        create("betaFeature") {
+            dimension = "environment"
+            applicationIdSuffix = ".beta.feature"
+            versionNameSuffix = "-beta-feature"
+
+            resValue("string", "app_name", "MyApp (Beta Feature)")
+            buildConfigField("String", "ENVIRONMENT", "\"beta-feature\"")
+            buildConfigField("Boolean", "ENABLE_LOGGING", "true")
+        }
+
+        create("live") {
+            dimension = "environment"
+
+            // No suffixes for production
+            resValue("string", "app_name", "MyApp")
+            buildConfigField("String", "ENVIRONMENT", "\"live\"")
+            buildConfigField("Boolean", "ENABLE_LOGGING", "false")
+        }
     }
 
     buildTypes {
@@ -43,13 +84,16 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
 
-    implementation("androidx.compose.material:material-icons-extended-android:1.7.8")
+    implementation(libs.androidx.compose.material.icons.extended.android)
     implementation(libs.squareup.retrofit2)
+    implementation(libs.paging.runtime)
+    implementation(libs.paging.compose)
     implementation(libs.squareup.retrofit2.converter.gson)
 
     implementation(libs.androidx.core.ktx)
