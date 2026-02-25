@@ -19,7 +19,7 @@ interface LocationRepo {
     ): Result<Location>
 
 
-    fun favouriteLocations(): List<Location>
+    fun favouriteLocations(): Flow<List<Location>>
 
 
 }

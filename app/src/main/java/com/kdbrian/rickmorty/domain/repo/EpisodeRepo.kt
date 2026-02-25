@@ -18,7 +18,7 @@ interface EpisodeRepo {
     ) : Result<Episode>
 
 
-    fun favouriteEpisodes(): List<Episode>
+    fun favouriteEpisodes(): Flow<List<Episode>>
 
 
 

@@ -3,6 +3,7 @@ package com.kdbrian.rickmorty.data.remote.repoimpl
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.kdbrian.rickmorty.data.local.dao.LocationsDao
 import com.kdbrian.rickmorty.data.paging.LocationsPagingSource
 import com.kdbrian.rickmorty.domain.model.Location
 import com.kdbrian.rickmorty.domain.repo.LocationRepo
@@ -11,7 +12,8 @@ import com.kdbrian.rickmorty.util.safeApiCall
 import kotlinx.coroutines.flow.Flow
 
 class LocationRepoImpl(
-    private val locationService: LocationService
+    private val locationService: LocationService,
+    private val locationsDao: LocationsDao
 ) : LocationRepo {
     override fun locations(page: Int?): Flow<PagingData<Location>> = Pager(
         config = PagingConfig(
@@ -30,6 +32,8 @@ class LocationRepoImpl(
         else
             null
     }
+
+    override fun favouriteLocations() = locationsDao.getLocations()
 
 
 }

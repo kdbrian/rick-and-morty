@@ -3,14 +3,10 @@ name: Build
 on:
   push:
     branches:
-      - main
       - master
       - develop
-      - 'feature/**'
-      - 'release/**'
   pull_request:
     branches:
-      - main
       - master
       - develop
   workflow_dispatch:
@@ -20,10 +16,11 @@ on:
         required: true
         type: choice
         options:
+          - dev
           - beta
           - beta-feature
           - live
-        default: 'beta'
+        default: 'dev'
       build_type:
         description: 'Build type'
         required: true

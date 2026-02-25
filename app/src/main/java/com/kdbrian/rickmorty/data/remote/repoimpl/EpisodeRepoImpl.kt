@@ -3,6 +3,7 @@ package com.kdbrian.rickmorty.data.remote.repoimpl
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.kdbrian.rickmorty.data.local.dao.EpisodesDao
 import com.kdbrian.rickmorty.data.paging.EpisodesPagingSource
 import com.kdbrian.rickmorty.domain.model.Episode
 import com.kdbrian.rickmorty.domain.repo.EpisodeRepo
@@ -11,7 +12,8 @@ import com.kdbrian.rickmorty.util.safeApiCall
 import kotlinx.coroutines.flow.Flow
 
 class EpisodeRepoImpl(
-    private val episodeService: EpisodeService
+    private val episodeService: EpisodeService,
+    private val episodesDao: EpisodesDao
 ) : EpisodeRepo {
     override fun episodes(page: Int?): Flow<PagingData<Episode>> = Pager(
         config = PagingConfig(
@@ -30,4 +32,6 @@ class EpisodeRepoImpl(
         else
             null
     }
+
+    override fun favouriteEpisodes() = episodesDao.getEpisodes()
 }

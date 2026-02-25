@@ -15,6 +15,7 @@ detektVersion="2.0.0-alpha.1"
 kspVersion="2.3.5"
 kotlinxSerializationVersion="2.3.10"
 kotlinxSerializationJsonVersion="1.10.0"
+daggerHiltAndroid="2.57.1"
 
 [libraries]
 androidx-compose-material-icons-extended-android = { module = "androidx.compose.material:material-icons-extended-android", version.ref = "materialIconsExtendedAndroid" }
@@ -37,6 +38,8 @@ paging-compose = { module= "androidx.paging:paging-compose", version="3.4.1" }
 squareup-retrofit2 = { module= "com.squareup.retrofit2:retrofit", version.ref="retrofitVersion" }
 squareup-retrofit2-converter-gson = { module= "com.squareup.retrofit2:converter-gson", version.ref="retrofitVersion" }
 kotlinx-serialization-json = { module= "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref="kotlinxSerializationJsonVersion" }
+hilt-android = { module= "com.google.dagger:hilt-android", version.ref="daggerHiltAndroid" }
+hilt-compiler = { module= "com.google.dagger:hilt-compiler", version.ref="daggerHiltAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -45,4 +48,5 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 detekt = { id = "dev.detekt", version.ref = "detektVersion"}
 devToolsKsp = { id = "com.google.devtools.ksp", version.ref = "kspVersion"}
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinxSerializationVersion"}
+dagger-hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "daggerHiltAndroid"}
 

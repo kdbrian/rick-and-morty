@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.devToolsKsp)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -104,6 +105,9 @@ dependencies {
     implementation(libs.paging.compose)
     implementation(libs.squareup.retrofit2.converter.gson)
     implementation(libs.kotlinx.serialization.json)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
 
     implementation("androidx.room:room-ktx:2.8.4")

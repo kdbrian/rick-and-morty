@@ -12,7 +12,7 @@ interface CharacterRepo {
         id: Int
     ): Result<Character>
 
-    fun favouriteCharacters(): List<Character>
+    fun favouriteCharacters(): Flow<List<Character>>
 
 
 }

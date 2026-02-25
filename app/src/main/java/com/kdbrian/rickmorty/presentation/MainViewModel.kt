@@ -9,14 +9,17 @@ import com.kdbrian.rickmorty.domain.model.Location
 import com.kdbrian.rickmorty.domain.repo.CharacterRepo
 import com.kdbrian.rickmorty.domain.repo.EpisodeRepo
 import com.kdbrian.rickmorty.domain.repo.LocationRepo
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MainViewModel(
+@HiltViewModel
+class MainViewModel @Inject constructor(
     private val characterRepo: CharacterRepo,
     private val locationRepo: LocationRepo,
     private val episodeRepo: EpisodeRepo
@@ -34,10 +37,8 @@ class MainViewModel(
 
 
     fun characters(page: Int? = 1) = characterRepo.characters(page)
-        .map { it.map {  } }
-        .launchIn(viewModelScope)
-    fun episodes(page: Int? = 1) = episodeRepo.episodes(page).launchIn(viewModelScope)
-    fun locations(page: Int? = 1) = locationRepo.locations(page).launchIn(viewModelScope)
+    fun episodes(page: Int? = 1) = episodeRepo.episodes(page)
+    fun locations(page: Int? = 1) = locationRepo.locations(page)
 
 
     fun characterById(id: Int) {
