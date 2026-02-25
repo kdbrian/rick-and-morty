@@ -1,6 +1,7 @@
-package com.kdbrian.rickmorty.domain.service
+package com.kdbrian.rickmorty.domain.repo
 
 import androidx.paging.PagingData
+import com.kdbrian.rickmorty.domain.model.Episode
 import com.kdbrian.rickmorty.domain.model.Location
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
@@ -8,16 +9,17 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-interface LocationService {
-    @GET("location")
-    suspend fun locations(
-        @Query("page")
+interface LocationRepo {
+    fun locations(
         page: Int? = null
-    ) : Response<List<Location>>
+    ): Flow<PagingData<Location>>
 
-    @GET("location/{id}")
     suspend fun locationById(
-        @Path("id")
         id: Int
-    ) : Response<Location>
+    ): Result<Location>
+
+
+    fun favouriteLocations(): List<Location>
+
+
 }

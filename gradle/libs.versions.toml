@@ -12,6 +12,7 @@ materialIconsExtendedAndroid = "1.7.8"
 retrofitVersion="3.0.0"
 pagingVersion="3.3.6"
 detektVersion="2.0.0-alpha.1"
+kspVersion="2.3.5"
 
 [libraries]
 androidx-compose-material-icons-extended-android = { module = "androidx.compose.material:material-icons-extended-android", version.ref = "materialIconsExtendedAndroid" }
@@ -30,7 +31,7 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 paging-runtime = { module= "androidx.paging:paging-runtime", version.ref="pagingVersion" }
-paging-compose = { module= "androidx.paging:paging-compose", version="3.4.0-rc01" }
+paging-compose = { module= "androidx.paging:paging-compose", version="3.4.1" }
 squareup-retrofit2 = { module= "com.squareup.retrofit2:retrofit", version.ref="retrofitVersion" }
 squareup-retrofit2-converter-gson = { module= "com.squareup.retrofit2:converter-gson", version.ref="retrofitVersion" }
 
@@ -39,4 +40,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 detekt = { id = "dev.detekt", version.ref = "detektVersion"}
+devToolsKsp = { id = "com.google.devtools.ksp", version.ref = "kspVersion"}
 
