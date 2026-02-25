@@ -1,7 +1,13 @@
 package com.kdbrian.rickmorty.domain.model
 
-import com.google.gson.annotations.SerializedName
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
+
+@Entity
+@Serializable
 data class Character(
     @SerializedName("created")
     val created: String,
@@ -9,6 +15,7 @@ data class Character(
     val episode: List<String>,
     @SerializedName("gender")
     val gender: String,
+    @PrimaryKey
     @SerializedName("id")
     val id: Int,
     @SerializedName("image")

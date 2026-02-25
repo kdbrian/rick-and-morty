@@ -2,6 +2,7 @@ package com.kdbrian.rickmorty.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.map
 import com.kdbrian.rickmorty.domain.model.Character
 import com.kdbrian.rickmorty.domain.model.Episode
 import com.kdbrian.rickmorty.domain.model.Location
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MainViewModel(
@@ -31,7 +33,9 @@ class MainViewModel(
     val selectedEpisode = _selectedEpisode.asStateFlow()
 
 
-    fun characters(page: Int? = 1) = characterRepo.characters(page).launchIn(viewModelScope)
+    fun characters(page: Int? = 1) = characterRepo.characters(page)
+        .map { it.map {  } }
+        .launchIn(viewModelScope)
     fun episodes(page: Int? = 1) = episodeRepo.episodes(page).launchIn(viewModelScope)
     fun locations(page: Int? = 1) = locationRepo.locations(page).launchIn(viewModelScope)
 

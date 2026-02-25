@@ -1,21 +1,17 @@
 package com.kdbrian.rickmorty.domain.model
 
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
+@Entity
+@Serializable
 data class Location(
-    @SerializedName("created")
-    val created: String,
-    @SerializedName("dimension")
-    val dimension: String,
-    @SerializedName("id")
-    val id: Int,
+    @PrimaryKey
     @SerializedName("name")
     val name: String,
-    @SerializedName("residents")
-    val residents: List<String>,
-    @SerializedName("type")
-    val type: String,
     @SerializedName("url")
     val url: String
 )
