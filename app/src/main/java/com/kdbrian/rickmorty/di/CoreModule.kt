@@ -28,6 +28,7 @@ import okhttp3.OkHttp
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import timber.log.Timber
 import javax.inject.Singleton
 
 private const val TAG = "CoreModule"
@@ -91,7 +92,7 @@ object CoreModule {
             .apply {
                 addInterceptor { chain ->
                     val request = chain.request()
-//                    Log.d(TAG, "providesOkHttpClient: Request: ${request.url}")
+                    Timber.d("providesOkHttpClient: Request: ${request.url}")
 
                     chain.proceed(request)
                 }

@@ -36,7 +36,7 @@ private const val TAG = "MainViewModel"
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val connectivityObserver: ConnectivityObserver,
+    connectivityObserver: ConnectivityObserver,
     private val characterRepo: CharacterRepo,
     private val locationRepo: LocationRepo,
     private val episodeRepo: EpisodeRepo
@@ -57,7 +57,7 @@ class MainViewModel @Inject constructor(
     val networkStatus: StateFlow<NetworkStatus> = connectivityObserver.networkStatus
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.WhileSubscribed(2_000),
             initialValue = NetworkStatus.Unavailable
         )
 

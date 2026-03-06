@@ -1,6 +1,7 @@
 package com.kdbrian.rickmorty.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -31,4 +32,10 @@ val Typography = Typography(
         letterSpacing = 0.5.sp
     )
     */
+)
+
+val TitleStyleSpan = SpanStyle(
+    fontSize = 28.sp,
+    fontWeight = FontWeight.Bold,
+//    fontFamily = Lor
 )

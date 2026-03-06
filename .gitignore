@@ -16,3 +16,7 @@
 .kotlin
 .kotlin/**
 local.properties
+# Android signing
+*.jks
+*.keystore
+keystore.properties

@@ -17,7 +17,7 @@ class CharacterRepoImpl(
         Pager(
             config = PagingConfig(
                 pageSize = 20,
-                prefetchDistance = 2,
+                prefetchDistance = 20,
                 enablePlaceholders = false
             ),
             pagingSourceFactory = { CharactersPagingSource(charactersService) },

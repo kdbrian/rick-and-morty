@@ -28,10 +28,12 @@ class CharactersPagingSource(
             }.getOrNull()
 
             if (characters != null) {
-                val nextPage = if (characters.isEmpty()) null else page + 1
+                val nextPage =
+                    characters.responseInfo.next.substringAfter("?page=").toIntOrNull()
+
 
                 LoadResult.Page(
-                    data = characters,
+                    data = characters.data,
                     prevKey = if (page == 1) null else page - 1,
                     nextKey = nextPage
                 )
@@ -44,7 +46,9 @@ class CharactersPagingSource(
 
     }
 
-    override fun getRefreshKey(state: PagingState<Int, CharacterEntity>): Int? = null
+    override fun getRefreshKey(state: PagingState<Int, CharacterEntity>): Int? {
+        return null
+    }
 
 
 }

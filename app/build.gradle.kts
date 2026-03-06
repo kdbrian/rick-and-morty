@@ -35,8 +35,6 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-
-            resValue("string", "app_name", "MyApp (Dev)")
             buildConfigField("String", "ENVIRONMENT", "\"dev\"")
             buildConfigField("Boolean", "ENABLE_LOGGING", "true")
         }
@@ -46,7 +44,6 @@ android {
             applicationIdSuffix = ".beta"
             versionNameSuffix = "-beta"
 
-            resValue("string", "app_name", "MyApp (Beta)")
             buildConfigField("String", "ENVIRONMENT", "\"beta\"")
             buildConfigField("Boolean", "ENABLE_LOGGING", "true")
         }
@@ -56,7 +53,6 @@ android {
             applicationIdSuffix = ".beta.feature"
             versionNameSuffix = "-beta-feature"
 
-            resValue("string", "app_name", "MyApp (Beta Feature)")
             buildConfigField("String", "ENVIRONMENT", "\"beta-feature\"")
             buildConfigField("Boolean", "ENABLE_LOGGING", "true")
         }
@@ -65,7 +61,6 @@ android {
             dimension = "environment"
 
             // No suffixes for production
-            resValue("string", "app_name", "MyApp")
             buildConfigField("String", "ENVIRONMENT", "\"live\"")
             buildConfigField("Boolean", "ENABLE_LOGGING", "false")
         }
@@ -86,7 +81,7 @@ android {
     }
 
     kotlin {
-        compilerOptions{
+        compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
@@ -106,10 +101,15 @@ dependencies {
     implementation(libs.squareup.retrofit2.converter.gson)
     implementation(libs.kotlinx.serialization.json)
 
+    //coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+
+    //hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
-
+    //room
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)

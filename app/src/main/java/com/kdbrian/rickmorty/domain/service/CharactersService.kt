@@ -1,6 +1,7 @@
 package com.kdbrian.rickmorty.domain.service
 
 import com.kdbrian.rickmorty.domain.model.CharacterEntity
+import com.kdbrian.rickmorty.util.ResponseWrapper
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -15,7 +16,7 @@ interface CharactersService {
     suspend fun characters(
         @Query("page")
         page: Int? = null
-    ): Response<Characters>
+    ): Response<ResponseWrapper<CharacterEntity>>
 
 
     @GET("character/{id}")

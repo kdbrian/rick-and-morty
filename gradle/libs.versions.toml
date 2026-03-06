@@ -19,6 +19,7 @@ daggerHiltAndroid="2.57.1"
 timberVersion ="5.0.1"
 roomKtx = "2.8.4"
 roomRuntime = "2.8.4"
+coil = "3.4.0"
 
 [libraries]
 androidx-compose-material-icons-extended-android = { module = "androidx.compose.material:material-icons-extended-android", version.ref = "materialIconsExtendedAndroid" }
@@ -47,6 +48,8 @@ kotlinx-serialization-json = { module= "org.jetbrains.kotlinx:kotlinx-serializat
 hilt-android = { module= "com.google.dagger:hilt-android", version.ref="daggerHiltAndroid" }
 hilt-compiler = { module= "com.google.dagger:hilt-android-compiler", version.ref="daggerHiltAndroid" }
 timber = { module= "com.jakewharton.timber:timber", version.ref="timberVersion" }
+coil-compose = { module= "io.coil-kt.coil3:coil-compose", version.ref="coil" }
+coil-network-okhttp = { module= "io.coil-kt.coil3:coil-network-okhttp", version.ref="coil" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
