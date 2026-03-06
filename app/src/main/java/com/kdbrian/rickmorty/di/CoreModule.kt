@@ -18,6 +18,7 @@ import com.kdbrian.rickmorty.domain.repo.LocationRepo
 import com.kdbrian.rickmorty.domain.service.CharactersService
 import com.kdbrian.rickmorty.domain.service.EpisodeService
 import com.kdbrian.rickmorty.domain.service.LocationService
+import com.kdbrian.rickmorty.util.ConnectivityObserver
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

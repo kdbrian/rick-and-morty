@@ -30,21 +30,20 @@ import com.kdbrian.rickmorty.ui.theme.RickMortyTheme
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 
-private const val TAG = "MainActivity"
 
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val mainViewModel : MainViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
 
-            val mainViewModel by viewModels<MainViewModel>()
             val characters = mainViewModel.characters().collectAsLazyPagingItems()
 
 
-            LaunchedEffect(characters) {
+            LaunchedEffect(Unit) {
                 Timber.d("onCreate: Char ${characters.itemCount}")
             }
             RickMortyTheme {

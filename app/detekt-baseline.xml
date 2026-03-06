@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>EmptyClassBlock:ChatRepo.kt:ChatRepo${ }</ID>
+    <ID>FunctionNaming:MainActivity.kt:@Composable fun App</ID>
+    <ID>FunctionNaming:Theme.kt:@Composable fun RickMortyTheme</ID>
+    <ID>MagicNumber:Color.kt:0xFF625b71</ID>
+    <ID>MagicNumber:Color.kt:0xFF6650a4</ID>
+    <ID>MagicNumber:Color.kt:0xFF7D5260</ID>
+    <ID>MagicNumber:Color.kt:0xFFCCC2DC</ID>
+    <ID>MagicNumber:Color.kt:0xFFD0BCFF</ID>
+    <ID>MagicNumber:Color.kt:0xFFEFB8C8</ID>
+    <ID>MagicNumber:MainViewModel.kt:MainViewModel$5_000</ID>
+    <ID>MayBeConstant:RickAndMortyDb.kt:RickAndMortyDb.Companion$private val DATABASE_NAME: String = "rick_and_morty_db"</ID>
+    <ID>NewLineAtEndOfFile:BaseDao.kt:com.kdbrian.rickmorty.data.local.dao.BaseDao.kt</ID>
+    <ID>NewLineAtEndOfFile:CharacterDto.kt:com.kdbrian.rickmorty.domain.dto.CharacterDto.kt</ID>
+    <ID>NewLineAtEndOfFile:CharacterEntity.kt:com.kdbrian.rickmorty.domain.model.CharacterEntity.kt</ID>
+    <ID>NewLineAtEndOfFile:CharacterRepo.kt:com.kdbrian.rickmorty.domain.repo.CharacterRepo.kt</ID>
+    <ID>NewLineAtEndOfFile:CharacterRepoImpl.kt:com.kdbrian.rickmorty.data.remote.repoimpl.CharacterRepoImpl.kt</ID>
+    <ID>NewLineAtEndOfFile:CharactersDao.kt:com.kdbrian.rickmorty.data.local.dao.CharactersDao.kt</ID>
+    <ID>NewLineAtEndOfFile:CharactersPagingSource.kt:com.kdbrian.rickmorty.data.paging.CharactersPagingSource.kt</ID>
+    <ID>NewLineAtEndOfFile:CharactersService.kt:com.kdbrian.rickmorty.domain.service.CharactersService.kt</ID>
+    <ID>NewLineAtEndOfFile:ChatRepo.kt:com.kdbrian.rickmorty.domain.repo.ChatRepo.kt</ID>
+    <ID>NewLineAtEndOfFile:Color.kt:com.kdbrian.rickmorty.ui.theme.Color.kt</ID>
+    <ID>NewLineAtEndOfFile:ConnectivityObserver.kt:com.kdbrian.rickmorty.util.ConnectivityObserver.kt</ID>
+    <ID>NewLineAtEndOfFile:Constants.kt:com.kdbrian.rickmorty.data.remote.Constants.kt</ID>
+    <ID>NewLineAtEndOfFile:Converters.kt:com.kdbrian.rickmorty.data.local.Converters.kt</ID>
+    <ID>NewLineAtEndOfFile:CoreModule.kt:com.kdbrian.rickmorty.di.CoreModule.kt</ID>
+    <ID>NewLineAtEndOfFile:Episode.kt:com.kdbrian.rickmorty.domain.model.Episode.kt</ID>
+    <ID>NewLineAtEndOfFile:EpisodeRepo.kt:com.kdbrian.rickmorty.domain.repo.EpisodeRepo.kt</ID>
+    <ID>NewLineAtEndOfFile:EpisodeRepoImpl.kt:com.kdbrian.rickmorty.data.remote.repoimpl.EpisodeRepoImpl.kt</ID>
+    <ID>NewLineAtEndOfFile:EpisodeService.kt:com.kdbrian.rickmorty.domain.service.EpisodeService.kt</ID>
+    <ID>NewLineAtEndOfFile:EpisodesDao.kt:com.kdbrian.rickmorty.data.local.dao.EpisodesDao.kt</ID>
+    <ID>NewLineAtEndOfFile:EpisodesPagingSource.kt:com.kdbrian.rickmorty.data.paging.EpisodesPagingSource.kt</ID>
+    <ID>NewLineAtEndOfFile:ExampleUnitTest.kt:com.kdbrian.rickmorty.ExampleUnitTest.kt</ID>
+    <ID>NewLineAtEndOfFile:FavouritesRepo.kt:com.kdbrian.rickmorty.domain.repo.FavouritesRepo.kt</ID>
+    <ID>NewLineAtEndOfFile:FavouritesRepoImpl.kt:com.kdbrian.rickmorty.data.remote.repoimpl.FavouritesRepoImpl.kt</ID>
+    <ID>NewLineAtEndOfFile:Location.kt:com.kdbrian.rickmorty.domain.model.Location.kt</ID>
+    <ID>NewLineAtEndOfFile:LocationRepo.kt:com.kdbrian.rickmorty.domain.repo.LocationRepo.kt</ID>
+    <ID>NewLineAtEndOfFile:LocationRepoImpl.kt:com.kdbrian.rickmorty.data.remote.repoimpl.LocationRepoImpl.kt</ID>
+    <ID>NewLineAtEndOfFile:LocationService.kt:com.kdbrian.rickmorty.domain.service.LocationService.kt</ID>
+    <ID>NewLineAtEndOfFile:LocationsDao.kt:com.kdbrian.rickmorty.data.local.dao.LocationsDao.kt</ID>
+    <ID>NewLineAtEndOfFile:LocationsPagingSource.kt:com.kdbrian.rickmorty.data.paging.LocationsPagingSource.kt</ID>
+    <ID>NewLineAtEndOfFile:MainViewModel.kt:com.kdbrian.rickmorty.presentation.MainViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:NetworkStatus.kt:com.kdbrian.rickmorty.util.NetworkStatus.kt</ID>
+    <ID>NewLineAtEndOfFile:Origin.kt:com.kdbrian.rickmorty.domain.model.Origin.kt</ID>
+    <ID>NewLineAtEndOfFile:RickAndMortyDb.kt:com.kdbrian.rickmorty.data.local.RickAndMortyDb.kt</ID>
+    <ID>NewLineAtEndOfFile:RickMortyApp.kt:com.kdbrian.rickmorty.RickMortyApp.kt</ID>
+    <ID>NewLineAtEndOfFile:Theme.kt:com.kdbrian.rickmorty.ui.theme.Theme.kt</ID>
+    <ID>NewLineAtEndOfFile:Type.kt:com.kdbrian.rickmorty.ui.theme.Type.kt</ID>
+    <ID>NewLineAtEndOfFile:dispatchIO.kt:com.kdbrian.rickmorty.util.dispatchIO.kt</ID>
+    <ID>TooGenericExceptionCaught:CharactersPagingSource.kt:CharactersPagingSource$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:EpisodesPagingSource.kt:EpisodesPagingSource$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LocationsPagingSource.kt:LocationsPagingSource$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:safeApiCall.kt:e: Exception</ID>
+    <ID>TooManyFunctions:CoreModule.kt:CoreModule</ID>
+    <ID>WildcardImport:ExampleUnitTest.kt:import org.junit.Assert.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

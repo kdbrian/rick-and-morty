@@ -1,6 +1,5 @@
 package com.kdbrian.rickmorty.util
 
-// NetworkStatus.kt
 sealed class NetworkStatus {
     object Available : NetworkStatus()
     object Unavailable : NetworkStatus()
@@ -9,4 +8,12 @@ sealed class NetworkStatus {
         val hasCellular: Boolean,
         val isValidated: Boolean
     ) : NetworkStatus()
+}
+
+fun NetworkStatus.isConnected(): Boolean {
+    return when (this) {
+        is NetworkStatus.Available -> true
+        is NetworkStatus.CapabilitiesChanged -> isValidated
+        NetworkStatus.Unavailable -> false
+    }
 }

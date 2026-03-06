@@ -11,19 +11,29 @@ import com.kdbrian.rickmorty.domain.repo.EpisodeRepo
 import com.kdbrian.rickmorty.domain.repo.LocationRepo
 import com.kdbrian.rickmorty.util.ConnectivityObserver
 import com.kdbrian.rickmorty.util.NetworkStatus
+import com.kdbrian.rickmorty.util.isConnected
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 
 private const val TAG = "MainViewModel"
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val connectivityObserver: ConnectivityObserver,
@@ -52,20 +62,38 @@ class MainViewModel @Inject constructor(
         )
 
     init {
-        Log.d(TAG, "Viewmodel: Created")
+        Timber.tag(TAG).d("Viewmodel: Created")
     }
 
 
-    fun characters(page: Int? = 1) = characterRepo.characters(page).onEach { data ->
-        Log.d(
-            TAG,
-            "characters: $data"
-        )
-    }.launchIn(viewModelScope)
+    fun characters(page: Int? = 1) = networkStatus
+        .onEach { status ->
+            Timber.tag(TAG).d("Network Status: $status")
+        }
+        .map { it.isConnected() }
+        .distinctUntilChanged()
+        .filter { it }
+        .flatMapLatest { characterRepo.characters(page) }
 
-    fun episodes(page: Int? = 1) = episodeRepo.episodes(page)
-    fun locations(page: Int? = 1) = locationRepo.locations(page)
+    fun episodes(page: Int? = 1) = networkStatus
+        .onEach { status ->
+            Timber.tag(TAG).d("Network Status: $status")
+        }
+        .map { it.isConnected() }
+        .distinctUntilChanged()
+        .filter { it }
+        .flatMapLatest { episodeRepo.episodes(page) }
 
+    fun locations(page: Int? = 1) = networkStatus
+        .onEach { status ->
+            Timber.tag(TAG).d("Network Status: $status")
+        }
+        .map { it.isConnected() }
+        .distinctUntilChanged()
+        .filter { it }
+        .flatMapLatest {
+            locationRepo.locations(page)
+        }
 
     fun characterById(id: Int) {
         viewModelScope.launch {
