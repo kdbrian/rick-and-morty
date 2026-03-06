@@ -2,24 +2,26 @@ package com.kdbrian.rickmorty.data.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.kdbrian.rickmorty.domain.model.Character
-import com.kdbrian.rickmorty.domain.repo.CharacterRepo
+import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import com.kdbrian.rickmorty.domain.service.CharactersService
 import com.kdbrian.rickmorty.util.safeApiCall
+import timber.log.Timber
 
 class CharactersPagingSource(
     private val charactersService: CharactersService
-) : PagingSource<Int, Character>() {
+) : PagingSource<Int, CharacterEntity>() {
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Character> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CharacterEntity> {
         return try {
             val page = params.key ?: 1
             var error: String? = null
             val characters = safeApiCall {
                 val response = charactersService.characters(page)
-                if (response.isSuccessful)
-                    response.body()
-                else {
+                if (response.isSuccessful) {
+                    val characterEntities = response.body()
+                    Timber.d("load: $characterEntities")
+                    characterEntities
+                } else {
                     error = response.errorBody()?.string()
                     null
                 }
@@ -42,7 +44,7 @@ class CharactersPagingSource(
 
     }
 
-    override fun getRefreshKey(state: PagingState<Int, Character>): Int? = null
+    override fun getRefreshKey(state: PagingState<Int, CharacterEntity>): Int? = null
 
 
 }

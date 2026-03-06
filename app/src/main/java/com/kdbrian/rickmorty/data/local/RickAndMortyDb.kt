@@ -8,16 +8,18 @@ import androidx.room.TypeConverters
 import com.kdbrian.rickmorty.data.local.dao.CharactersDao
 import com.kdbrian.rickmorty.data.local.dao.EpisodesDao
 import com.kdbrian.rickmorty.data.local.dao.LocationsDao
+import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import com.kdbrian.rickmorty.domain.model.Episode
 import com.kdbrian.rickmorty.domain.model.Location
 
 @Database(
     entities = [
-        Character::class,
+        CharacterEntity::class,
         Episode::class,
         Location::class
     ],
-    version = 1
+    version = 1,
+    exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class RickAndMortyDb : RoomDatabase() {

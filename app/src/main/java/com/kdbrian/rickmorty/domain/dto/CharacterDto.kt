@@ -1,14 +1,10 @@
 package com.kdbrian.rickmorty.domain.dto
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import com.google.gson.annotations.SerializedName
-import com.kdbrian.rickmorty.domain.model.Character
+import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import com.kdbrian.rickmorty.domain.model.Location
 import com.kdbrian.rickmorty.domain.model.Origin
 import kotlinx.serialization.Serializable
 
-@Serializable
 data class CharacterDto(
     val created: String,
     val episode: List<String>,
@@ -26,7 +22,7 @@ data class CharacterDto(
 )
 
 
-fun CharacterDto.toCharacter() = Character(
+fun CharacterDto.toCharacter() = CharacterEntity(
     created = created,
     episode = episode,
     gender = gender,
@@ -41,7 +37,7 @@ fun CharacterDto.toCharacter() = Character(
     url = url
 )
 
-fun Character.toCharacterDto() = CharacterDto(
+fun CharacterEntity.toCharacterDto() = CharacterDto(
     created = created,
     episode = episode,
     gender = gender,

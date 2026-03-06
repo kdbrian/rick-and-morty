@@ -2,15 +2,12 @@ package com.kdbrian.rickmorty.data.remote.repoimpl
 
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
-import androidx.paging.PagingData
 import com.kdbrian.rickmorty.data.local.dao.CharactersDao
 import com.kdbrian.rickmorty.data.paging.CharactersPagingSource
-import com.kdbrian.rickmorty.domain.model.Character
+import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import com.kdbrian.rickmorty.domain.repo.CharacterRepo
-import com.kdbrian.rickmorty.domain.service.Characters
 import com.kdbrian.rickmorty.domain.service.CharactersService
 import com.kdbrian.rickmorty.util.safeApiCall
-import kotlinx.coroutines.flow.Flow
 
 class CharacterRepoImpl(
     private val charactersService: CharactersService,
@@ -27,7 +24,7 @@ class CharacterRepoImpl(
             initialKey = page
         ).flow
 
-    override suspend fun characterById(id: Int): Result<Character> = safeApiCall {
+    override suspend fun characterById(id: Int): Result<CharacterEntity> = safeApiCall {
         val character = charactersService.characterById(id)
         if (character.isSuccessful)
             character.body()

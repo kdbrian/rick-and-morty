@@ -2,10 +2,7 @@ package com.kdbrian.rickmorty.data.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import com.kdbrian.rickmorty.domain.model.Character
 import com.kdbrian.rickmorty.domain.model.Episode
-import com.kdbrian.rickmorty.domain.repo.CharacterRepo
-import com.kdbrian.rickmorty.domain.service.CharactersService
 import com.kdbrian.rickmorty.domain.service.EpisodeService
 import com.kdbrian.rickmorty.util.safeApiCall
 

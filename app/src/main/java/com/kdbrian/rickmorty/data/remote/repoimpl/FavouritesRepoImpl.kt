@@ -3,7 +3,7 @@ package com.kdbrian.rickmorty.data.remote.repoimpl
 import com.kdbrian.rickmorty.data.local.dao.CharactersDao
 import com.kdbrian.rickmorty.data.local.dao.EpisodesDao
 import com.kdbrian.rickmorty.data.local.dao.LocationsDao
-import com.kdbrian.rickmorty.domain.model.Character
+import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import com.kdbrian.rickmorty.domain.model.Episode
 import com.kdbrian.rickmorty.domain.model.Location
 import com.kdbrian.rickmorty.domain.repo.FavouritesRepo
@@ -25,9 +25,9 @@ class FavouritesRepoImpl(
         get() = episodeDao.getEpisodes()
 
 
-    override suspend fun toggleCharacterInFavourites(character: Character) = dispatchIO<Unit> {
-        if (characterDao.getCharacterById(character.id) != null) characterDao.delete(character)
-        else characterDao.insert(character)
+    override suspend fun toggleCharacterInFavourites(characterEntity: CharacterEntity) = dispatchIO<Unit> {
+        if (characterDao.getCharacterById(characterEntity.id) != null) characterDao.delete(characterEntity)
+        else characterDao.insert(characterEntity)
     }
 
     override suspend fun toggleLocationInFavourites(location: Location) = dispatchIO<Unit> {

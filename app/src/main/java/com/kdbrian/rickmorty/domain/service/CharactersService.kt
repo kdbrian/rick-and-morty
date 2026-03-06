@@ -1,13 +1,13 @@
 package com.kdbrian.rickmorty.domain.service
 
-import com.kdbrian.rickmorty.domain.model.Character
+import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
 
-typealias Characters = List<Character>
+typealias Characters = List<CharacterEntity>
 
 interface CharactersService {
 
@@ -22,7 +22,7 @@ interface CharactersService {
     suspend fun characterById(
         @Path("id")
         id: Int
-    ): Response<Character>
+    ): Response<CharacterEntity>
 
 
 }

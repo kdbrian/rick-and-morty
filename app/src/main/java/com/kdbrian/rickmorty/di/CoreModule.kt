@@ -1,6 +1,8 @@
 package com.kdbrian.rickmorty.di
 
 import android.app.Application
+import android.content.Context
+import android.util.Log
 import com.kdbrian.rickmorty.RickMortyApp
 import com.kdbrian.rickmorty.data.local.RickAndMortyDb
 import com.kdbrian.rickmorty.data.local.dao.CharactersDao
@@ -19,6 +21,7 @@ import com.kdbrian.rickmorty.domain.service.LocationService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttp
 import okhttp3.OkHttpClient
@@ -26,6 +29,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
+private const val TAG = "CoreModule"
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -34,19 +38,26 @@ object CoreModule {
 
     @Provides
     @Singleton
-    fun providesApp(): Application {
-        return RickMortyApp() as Application
+    fun providesAppDb(
+        @ApplicationContext
+        context: Context
+    ): RickAndMortyDb {
+        return RickAndMortyDb.getDb(
+            context
+        )
     }
 
     @Provides
     @Singleton
-    fun providesAppDb(
-        app: Application
-    ): RickAndMortyDb {
-        return RickAndMortyDb.getDb(
-            app.applicationContext
+    fun providesConnectivityObserver(
+        @ApplicationContext
+        context: Context
+    ): ConnectivityObserver {
+        return ConnectivityObserver(
+            context
         )
     }
+
 
     @Provides
     @Singleton
@@ -72,15 +83,33 @@ object CoreModule {
         return db.episodesDao()
     }
 
+    @Provides
+    @Singleton
+    fun providesOkHttpClient(): OkHttpClient {
+        return OkHttpClient().newBuilder()
+            .apply {
+                addInterceptor { chain ->
+                    val request = chain.request()
+//                    Log.d(TAG, "providesOkHttpClient: Request: ${request.url}")
+
+                    chain.proceed(request)
+                }
+                retryOnConnectionFailure(true)
+            }
+            .build()
+    }
+
 
     @Provides
     @Singleton
-    fun providesRetrofitService(): Retrofit {
+    fun providesRetrofitService(
+        okHttpClient: OkHttpClient
+    ): Retrofit {
         return Retrofit
             .Builder()
             .apply {
                 baseUrl(Constants.baseUrl)
-                client(OkHttpClient())
+                client(okHttpClient)
                 addConverterFactory(GsonConverterFactory.create())
             }
             .build()

@@ -7,7 +7,6 @@ import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable
 
 @Entity
-@Serializable
 data class Episode(
     @SerializedName("air_date")
     val airDate: String,
