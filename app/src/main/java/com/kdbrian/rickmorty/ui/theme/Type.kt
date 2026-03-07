@@ -3,9 +3,11 @@ package com.kdbrian.rickmorty.ui.theme
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.kdbrian.rickmorty.R
 
 // Set of Material typography styles to start with
 val Typography = Typography(
@@ -39,3 +41,12 @@ val TitleStyleSpan = SpanStyle(
     fontWeight = FontWeight.Bold,
 //    fontFamily = Lor
 )
+
+val Kavoon by lazy {
+    FontFamily(
+        Font(
+            R.font.kavoon_regular,
+            FontWeight.Normal
+        )
+    )
+}

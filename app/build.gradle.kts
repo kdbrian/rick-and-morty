@@ -100,6 +100,8 @@ dependencies {
     implementation(libs.paging.compose)
     implementation(libs.squareup.retrofit2.converter.gson)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.palette.ktx)
+    implementation("androidx.compose.material:material:1.10.4")
 
     //coil
     implementation(libs.coil.compose)

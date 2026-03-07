@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -73,17 +75,19 @@ class MainActivity : ComponentActivity() {
 
             RickMortyTheme {
                 Scaffold(
+                    modifier = Modifier
+                        .fillMaxSize(),
                     snackbarHost = {
                         androidx.compose.material3.SnackbarHost(
                             hostState = snackbarHostState
                         )
                     }
-                ) { paddingValues ->
+                ) { _ ->
                     AnimatedContent(
                         targetState = characters.loadState.refresh is LoadState.Loading,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(paddingValues)
+//                            .padding(paddingValues)
                     ) {
                         if (it) {
                             CircularProgressIndicator(

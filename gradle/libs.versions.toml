@@ -20,6 +20,7 @@ timberVersion ="5.0.1"
 roomKtx = "2.8.4"
 roomRuntime = "2.8.4"
 coil = "3.4.0"
+paletteKtx = "1.0.0"
 
 [libraries]
 androidx-compose-material-icons-extended-android = { module = "androidx.compose.material:material-icons-extended-android", version.ref = "materialIconsExtendedAndroid" }
@@ -50,6 +51,7 @@ hilt-compiler = { module= "com.google.dagger:hilt-android-compiler", version.ref
 timber = { module= "com.jakewharton.timber:timber", version.ref="timberVersion" }
 coil-compose = { module= "io.coil-kt.coil3:coil-compose", version.ref="coil" }
 coil-network-okhttp = { module= "io.coil-kt.coil3:coil-network-okhttp", version.ref="coil" }
+palette-ktx = { module= "androidx.palette:palette-ktx", version.ref="paletteKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

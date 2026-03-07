@@ -67,16 +67,16 @@ class MainViewModel @Inject constructor(
 
 
     fun characters(page: Int? = 1) =
-//        networkStatus
-//        .onEach { status ->
-//            Timber.tag(TAG).d("Network Status: $status")
-//        }
-//        .map { it.isConnected() }
-//        .distinctUntilChanged()
-//        .filter { it }
-//        .flatMapLatest {
+        networkStatus
+        .onEach { status ->
+            Timber.tag(TAG).d("Network Status: $status")
+        }
+        .map { it.isConnected() }
+        .distinctUntilChanged()
+        .filter { it }
+        .flatMapLatest {
             characterRepo.characters(page)
-//        }
+        }
 
     fun episodes(page: Int? = 1) = networkStatus
         .onEach { status ->
