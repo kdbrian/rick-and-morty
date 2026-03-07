@@ -8,7 +8,6 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 
-typealias Characters = List<CharacterEntity>
 
 interface CharactersService {
 

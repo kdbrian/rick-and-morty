@@ -25,11 +25,7 @@ class CharacterRepoImpl(
         ).flow
 
     override suspend fun characterById(id: Int): Result<CharacterEntity> = safeApiCall {
-        val character = charactersService.characterById(id)
-        if (character.isSuccessful)
-            character.body()
-        else
-            null
+        charactersService.characterById(id)
     }
 
     override fun favouriteCharacters() = charactersDao.getCharacters()

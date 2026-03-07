@@ -26,12 +26,8 @@ class EpisodeRepoImpl(
     ).flow
 
     override suspend fun episodeById(id: Int): Result<Episode> = safeApiCall {
-        val episode = episodeService.episodeById(id)
-        if (episode.isSuccessful)
-            episode.body()
-        else
-            null
-    }
+        episodeService.episodeById(id)
+        }
 
     override fun favouriteEpisodes() = episodesDao.getEpisodes()
 }

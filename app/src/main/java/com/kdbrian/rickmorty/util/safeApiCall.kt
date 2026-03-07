@@ -1,13 +1,20 @@
 package com.kdbrian.rickmorty.util
 
-suspend fun <T> safeApiCall(call: suspend () -> T?): Result<T> {
+import retrofit2.Response
+import timber.log.Timber
+
+suspend fun <T> safeApiCall(call: suspend () -> Response<T>): Result<T> {
     return dispatchIO {
         try {
             val result = call()
-            if (result == null)
-                Result.failure(Exception("Something unexpected happened"))
+            val body = result.body()
+
+            Timber.d("safeApiCall: $body")
+
+            if (body != null && result.isSuccessful)
+                Result.success(body)
             else
-                Result.success(result)
+                Result.failure(result.errorBody()?.string()?.let { Exception(it) } ?: Exception())
         } catch (e: Exception) {
             Result.failure(e)
         }

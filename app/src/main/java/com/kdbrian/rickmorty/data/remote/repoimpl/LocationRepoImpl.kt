@@ -26,11 +26,7 @@ class LocationRepoImpl(
     ).flow
 
     override suspend fun locationById(id: Int) = safeApiCall {
-        val location = locationService.locationById(id)
-        if (location.isSuccessful)
-            location.body()
-        else
-            null
+        locationService.locationById(id)
     }
 
     override fun favouriteLocations() = locationsDao.getLocations()

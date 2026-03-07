@@ -15,13 +15,8 @@ class EpisodesPagingSource(
             val page = params.key ?: 1
             var error: String? = null
             val episodes = safeApiCall {
-                val response = episodeService.episodes(page)
-                if (response.isSuccessful)
-                    response.body()
-                else {
-                    error = response.errorBody()?.string()
-                    null
-                }
+                episodeService.episodes(page)
+
             }.getOrNull()
 
             if (episodes != null) {

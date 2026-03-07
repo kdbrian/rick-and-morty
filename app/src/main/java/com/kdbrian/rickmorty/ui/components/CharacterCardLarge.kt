@@ -21,22 +21,27 @@ import com.kdbrian.rickmorty.util.shimmer
 
 @Composable
 fun CharacterCardLarge(
+    modifier: Modifier = Modifier,
     brush: Brush? = null,
     imageUrl: String? = null,
     title: AnnotatedString = buildAnnotatedString { },
     imagePlaceHolder: Int? = null,
 ) {
     Box(
-        modifier = Modifier.fillMaxSize()
-            .then(
-                if (brush != null) {
-                    Modifier.background(brush)
-                } else {
-                    Modifier
-                }
-            ),
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+                .then(
+                    if (brush != null) {
+                        Modifier.background(brush)
+                    } else {
+                        Modifier
+                    }
+                ),
+        )
+
         Crossfade(imageUrl != null && imageUrl.isNotEmpty()) { state ->
             when (state) {
                 true -> AsyncImage(

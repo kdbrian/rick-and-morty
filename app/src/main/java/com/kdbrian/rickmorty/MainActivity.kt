@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -85,7 +86,11 @@ class MainActivity : ComponentActivity() {
                             .padding(paddingValues)
                     ) {
                         if (it) {
-                            CircularProgressIndicator()
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(45.dp)
+//                                    .align(Alignment.Center)
+                            )
                         } else {
                             DiscoveryScreen(
                                 characters = characters

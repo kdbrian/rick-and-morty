@@ -21,11 +21,12 @@ fun DiscoveryScreen(
     val pagerState = rememberPagerState { characters.itemCount }
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
     ) {
         val character = characters[it]
 
         CharacterCardLarge(
+            modifier = Modifier.fillMaxSize(),
             imageUrl = character?.image,
             title = buildAnnotatedString {
                 withStyle(

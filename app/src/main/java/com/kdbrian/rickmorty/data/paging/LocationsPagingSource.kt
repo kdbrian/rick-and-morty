@@ -13,15 +13,9 @@ class LocationsPagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Location> {
         return try {
             val page = params.key ?: 1
-            var error: String? = null
+            val error: String? = null
             val episodes = safeApiCall {
-                val response = locationService.locations(page)
-                if (response.isSuccessful)
-                    response.body()
-                else {
-                    error = response.errorBody()?.string()
-                    null
-                }
+                locationService.locations(page)
             }.getOrNull()
 
             if (episodes != null) {
