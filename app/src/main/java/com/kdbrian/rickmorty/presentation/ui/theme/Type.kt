@@ -1,4 +1,4 @@
-package com.kdbrian.rickmorty.ui.theme
+package com.kdbrian.rickmorty.presentation.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.SpanStyle

@@ -1,4 +1,4 @@
-package com.kdbrian.rickmorty.ui.theme
+package com.kdbrian.rickmorty.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

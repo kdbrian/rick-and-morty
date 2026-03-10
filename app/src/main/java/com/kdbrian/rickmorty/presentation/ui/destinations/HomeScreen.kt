@@ -1,4 +1,4 @@
-package com.kdbrian.rickmorty.ui.destinations
+package com.kdbrian.rickmorty.presentation.ui.destinations
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
