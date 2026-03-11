@@ -1,6 +1,6 @@
 package com.kdbrian.rickmorty.presentation.ui.components
 
-import android.R.attr.fontFamily
+ import android.R.attr.fontFamily
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -74,13 +74,7 @@ fun CharacterCardLarge(
         )
 
         Crossfade(
-            targetState =             characterEntity.image.isNotEmpty(),
-            animationSpec = {
-                fadeIn()
-                    .plus(scaleIn())
-                    .togetherWith(fadeOut() + scaleOut())
-            }
-
+            targetState = characterEntity.image.isNotEmpty(),
         ) { state ->
             when (state) {
                 true -> AsyncImage(
