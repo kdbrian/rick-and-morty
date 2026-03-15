@@ -7,12 +7,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.PlayCircleOutline
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kdbrian.rickmorty.presentation.ui.theme.RickMortyTheme
 import com.kdbrian.rickmorty.presentation.ui.util.ThemePreviews
@@ -27,7 +28,9 @@ fun CharacterFab(
     containerColor: Color = Color.LightGray,
     characterId: Int = 0,
     isFavorite: Boolean = false,
-    onEvent: (AppEvent) -> Unit = {}
+    isAutoPlay: Boolean = false,
+    onEvent: (AppEvent) -> Unit = {},
+    onClose: () -> Unit = {}
 ) {
 
     Column(
@@ -43,12 +46,44 @@ fun CharacterFab(
                 shape = CircleShape
             ),
             onClick = {
+                onEvent(AppEvent.ToggleAutoPlay(!isAutoPlay))
+            }
+        ) {
+            Icon(
+                Icons.Rounded.PlayCircleOutline ,
+                contentDescription = "Toggle Autoplay",
+                tint = contentColor,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
+
+        IconButton(
+            modifier = Modifier.background(
+                color = containerColor,
+                shape = CircleShape
+            ),
+            onClick = {
                 onEvent(AppEvent.ToggleFavorite(characterId, !isFavorite))
             }
         ) {
             Icon(
                 Icons.Rounded.FavoriteBorder,
                 contentDescription = "Toggle Favorite",
+                tint = contentColor,
+                modifier = Modifier.padding(4.dp)
+            )
+        }
+
+        IconButton(
+            modifier = Modifier.background(
+                color = containerColor,
+                shape = CircleShape
+            ),
+            onClick = onClose
+        ) {
+            Icon(
+                Icons.Rounded.Clear,
+                contentDescription = "Close",
                 tint = contentColor,
                 modifier = Modifier.padding(4.dp)
             )

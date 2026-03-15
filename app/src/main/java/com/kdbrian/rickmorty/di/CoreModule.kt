@@ -5,13 +5,16 @@ import android.content.Context
 import android.util.Log
 import com.kdbrian.rickmorty.RickMortyApp
 import com.kdbrian.rickmorty.data.local.RickAndMortyDb
+import com.kdbrian.rickmorty.data.local.dao.AppCounterDao
 import com.kdbrian.rickmorty.data.local.dao.CharactersDao
 import com.kdbrian.rickmorty.data.local.dao.EpisodesDao
 import com.kdbrian.rickmorty.data.local.dao.LocationsDao
+import com.kdbrian.rickmorty.data.local.impl.AppCounterRepoImpl
 import com.kdbrian.rickmorty.data.remote.Constants
 import com.kdbrian.rickmorty.data.remote.repoimpl.CharacterRepoImpl
 import com.kdbrian.rickmorty.data.remote.repoimpl.EpisodeRepoImpl
 import com.kdbrian.rickmorty.data.remote.repoimpl.LocationRepoImpl
+import com.kdbrian.rickmorty.domain.repo.AppCounterRepo
 import com.kdbrian.rickmorty.domain.repo.CharacterRepo
 import com.kdbrian.rickmorty.domain.repo.EpisodeRepo
 import com.kdbrian.rickmorty.domain.repo.LocationRepo
@@ -19,6 +22,7 @@ import com.kdbrian.rickmorty.domain.service.CharactersService
 import com.kdbrian.rickmorty.domain.service.EpisodeService
 import com.kdbrian.rickmorty.domain.service.LocationService
 import com.kdbrian.rickmorty.util.ConnectivityObserver
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,7 +39,7 @@ private const val TAG = "CoreModule"
 
 @Module
 @InstallIn(SingletonComponent::class)
-object CoreModule {
+abstract class CoreModule {
 
 
     @Provides
@@ -83,6 +87,14 @@ object CoreModule {
         db: RickAndMortyDb
     ): EpisodesDao {
         return db.episodesDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providesAppCounterDao(
+        db: RickAndMortyDb
+    ): AppCounterDao {
+        return db.appCounterDao()
     }
 
     @Provides
@@ -179,6 +191,14 @@ object CoreModule {
             locationsDao = locationsDao
         )
     }
+
+
+
+    @Binds
+    @Singleton
+    abstract fun providesAppCounterRepo(
+        appCounterRepoImpl: AppCounterRepoImpl
+    ): AppCounterRepo
 
 
 }

@@ -1,6 +1,7 @@
 package com.kdbrian.rickmorty.presentation
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kdbrian.rickmorty.domain.model.CharacterEntity
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -39,6 +41,7 @@ class MainViewModel @Inject constructor(
     connectivityObserver: ConnectivityObserver,
     private val characterRepo: CharacterRepo,
     private val locationRepo: LocationRepo,
+    private val saveStateHandle : SavedStateHandle,
     private val episodeRepo: EpisodeRepo
 ) : ViewModel() {
 
@@ -52,7 +55,6 @@ class MainViewModel @Inject constructor(
     private val _selectedEpisode = MutableStateFlow<Episode?>(null)
     val selectedEpisode = _selectedEpisode.asStateFlow()
 
-//    private val connectivityObserver = ConnectivityObserver(context)
 
     val networkStatus: StateFlow<NetworkStatus> = connectivityObserver.networkStatus
         .stateIn(
@@ -61,7 +63,14 @@ class MainViewModel @Inject constructor(
             initialValue = NetworkStatus.Unavailable
         )
 
+    private val appSettings : Map<String, Any> = mapOf()
+
+
+
     init {
+
+//        Json.encodeToString(appSettings)
+
         Timber.tag(TAG).d("Viewmodel: Created")
     }
 

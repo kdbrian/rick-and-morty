@@ -5,9 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.kdbrian.rickmorty.data.local.dao.AppCounterDao
 import com.kdbrian.rickmorty.data.local.dao.CharactersDao
 import com.kdbrian.rickmorty.data.local.dao.EpisodesDao
 import com.kdbrian.rickmorty.data.local.dao.LocationsDao
+import com.kdbrian.rickmorty.domain.model.AppCounter
 import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import com.kdbrian.rickmorty.domain.model.Episode
 import com.kdbrian.rickmorty.domain.model.Location
@@ -16,13 +18,16 @@ import com.kdbrian.rickmorty.domain.model.Location
     entities = [
         CharacterEntity::class,
         Episode::class,
-        Location::class
+        Location::class,
+        AppCounter::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class RickAndMortyDb : RoomDatabase() {
+
+    abstract fun appCounterDao(): AppCounterDao
 
     abstract fun charactersDao(): CharactersDao
     abstract fun episodesDao(): EpisodesDao

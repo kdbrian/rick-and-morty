@@ -2,7 +2,11 @@ package com.kdbrian.rickmorty.presentation.ui.components
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +40,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.kdbrian.rickmorty.util.shimmer
 import com.kdbrian.rickmorty.R
 import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import com.kdbrian.rickmorty.presentation.ui.theme.Kavoon
@@ -44,6 +47,7 @@ import com.kdbrian.rickmorty.presentation.ui.theme.Matemasie
 import com.kdbrian.rickmorty.presentation.ui.theme.RickMortyTheme
 import com.kdbrian.rickmorty.presentation.ui.util.ThemePreviews
 import com.kdbrian.rickmorty.util.getDominantColor
+import com.kdbrian.rickmorty.util.shimmer
 
 
 class CharacterCardLargePreviewProvider : PreviewParameterProvider<CharacterEntity> {
@@ -69,7 +73,7 @@ fun CharacterCardLarge(
     }
 
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             Box(
@@ -86,6 +90,11 @@ fun CharacterCardLarge(
 
             Crossfade(
                 targetState = characterEntity.image.isNotEmpty(),
+                animationSpec = tween(
+                    easing = FastOutSlowInEasing,
+                    durationMillis = 5,
+                    delayMillis = 3
+                )
             ) { state ->
                 when (state) {
                     true -> AsyncImage(
@@ -160,7 +169,13 @@ fun CharacterCardLarge(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
+                        .dropShadow(
+                            shadow = Shadow(
+                                12.dp,
+                                color.value
+                            ),
+                            shape = RectangleShape
+                        ).background(
                             Color.Black.copy(.65f),
                             shape = RectangleShape
                         )
@@ -168,7 +183,8 @@ fun CharacterCardLarge(
                             color = color.value.copy(.15f),
                             shape = RectangleShape
                         )
-                        .padding(12.dp),
+                        .padding(12.dp)
+                        ,
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -181,7 +197,7 @@ fun CharacterCardLarge(
                         ),
                         style = TextStyle(
                             fontFamily = Matemasie,
-                            lineHeight = 48.sp,
+                            lineHeight = 50.sp,
                             color = color.value,
                         ),
 
@@ -244,10 +260,12 @@ fun CharacterCardLarge(
                                 color = color.value,
                             ),
                             modifier = Modifier
-                                .background(
+                                .padding(6.dp)
+                                .border(
+                                    width = 1.dp,
                                     color = Color(0xFFFFD29D)
                                 )
-                                .padding(6.dp)
+                                .padding(4.dp)
                         )
 
 
@@ -258,10 +276,13 @@ fun CharacterCardLarge(
                                 color = color.value,
                             ),
                             modifier = Modifier
-                                .background(
+                                .padding(6.dp)
+                                .border(
+                                    width = 1.dp,
                                     color = Color(0xFFFFD29D)
                                 )
-                                .padding(6.dp)
+                                .padding(4.dp)
+
                         )
 
 
@@ -272,10 +293,13 @@ fun CharacterCardLarge(
                                 color = color.value,
                             ),
                             modifier = Modifier
-                                .background(
+                                .padding(6.dp)
+                                .border(
+                                    width = 1.dp,
                                     color = Color(0xFFFFD29D)
                                 )
-                                .padding(6.dp)
+                                .padding(4.dp)
+
                         )
 
 

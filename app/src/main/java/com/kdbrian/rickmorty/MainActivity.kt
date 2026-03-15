@@ -17,10 +17,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.kdbrian.rickmorty.presentation.CounterViewModel
 import com.kdbrian.rickmorty.presentation.MainViewModel
 import com.kdbrian.rickmorty.presentation.ui.destinations.DiscoveryScreen
+import com.kdbrian.rickmorty.presentation.ui.destinations.HomeScreen
 import com.kdbrian.rickmorty.presentation.ui.theme.RickMortyTheme
 import com.kdbrian.rickmorty.util.dispatchIO
 import dagger.hilt.android.AndroidEntryPoint
@@ -33,13 +36,17 @@ import timber.log.Timber
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
+    private val counterViewModel: CounterViewModel by viewModels()
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        WindowCompat.enableEdgeToEdge(window)
         setContent {
 
             val characters = mainViewModel.characters()
             val snackbarHostState = remember { SnackbarHostState() }
+
 
             RickMortyTheme {
                 Scaffold(
@@ -52,7 +59,7 @@ class MainActivity : ComponentActivity() {
                     }
                 ) { _ ->
 
-                    DiscoveryScreen(
+                    HomeScreen(
                         characters = characters
                     )
                 }

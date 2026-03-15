@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Update
+import androidx.room.Upsert
 
 @Dao
 interface BaseDao<T>{
@@ -15,7 +16,7 @@ interface BaseDao<T>{
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(entities: List<T>): List<Long>
 
-    @Update
+    @Upsert
     suspend fun update(entity: T)
 
     @Update

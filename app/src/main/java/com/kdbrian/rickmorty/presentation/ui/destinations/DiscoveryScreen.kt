@@ -10,7 +10,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +24,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -51,13 +49,13 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.kdbrian.rickmorty.util.shimmer
 import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import com.kdbrian.rickmorty.presentation.ui.components.CharacterCardLarge
 import com.kdbrian.rickmorty.presentation.ui.components.CharacterFab
 import com.kdbrian.rickmorty.presentation.ui.theme.RickMortyTheme
 import com.kdbrian.rickmorty.presentation.ui.util.ThemePreviews
 import com.kdbrian.rickmorty.util.IDLE_CHARACTER_SWAP_DELAY
+import com.kdbrian.rickmorty.util.shimmer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,7 +79,7 @@ fun DiscoveryScreen(
 
     var isExpanded by remember { mutableStateOf(false) }
     val isFabExpanded = updateTransition(isExpanded)
-    
+
     val scale by isFabExpanded.animateFloat {
         when (it) {
             true -> 1f
@@ -141,6 +139,9 @@ fun DiscoveryScreen(
                                 true -> {
                                     CharacterFab(
                                         characterId = currentCharacter?.id ?: 1,
+                                        onClose = {
+                                            isExpanded = false
+                                        }
                                     )
                                 }
 
@@ -168,12 +169,11 @@ fun DiscoveryScreen(
 
 
                     }
-                ) { paddingValues ->
+                ) { _ ->
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(paddingValues),
                     ) {
                         pagingItems[it]?.let { character ->
 
@@ -273,7 +273,6 @@ fun DiscoveryScreenLoading() {
 //                )
                 .shimmer()
         )
-
 
     }
 }
