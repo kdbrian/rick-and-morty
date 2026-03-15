@@ -2,9 +2,9 @@ name: Gradle Build
 
 on:
   push:
-    branches: [main, backup]
+    branches: [master]
   pull_request:
-    branches: [ main, koin, dagger-hilt, master ]
+    branches: [ master ]
     
   workflow_dispatch:
     inputs:
