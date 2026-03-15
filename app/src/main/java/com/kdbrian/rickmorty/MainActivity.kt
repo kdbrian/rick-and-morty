@@ -38,23 +38,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
 
-            val characters = mainViewModel.characters().collectAsLazyPagingItems()
+            val characters = mainViewModel.characters()
             val snackbarHostState = remember { SnackbarHostState() }
-            LaunchedEffect(characters) {
-
-                if (characters.loadState.refresh is LoadState.Error) {
-                    snackbarHostState.showSnackbar(
-                        (
-                                characters.loadState.refresh as LoadState.Error
-                                ).error.localizedMessage ?: "Unknown Error"
-                    )
-                }
-                dispatchIO {
-                    mainViewModel.networkStatus.collectLatest { status ->
-                        Timber.d("Network Status: $status")
-                    }
-                }
-            }
 
             RickMortyTheme {
                 Scaffold(
@@ -66,24 +51,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 ) { _ ->
-                    AnimatedContent(
-                        targetState = characters.loadState.refresh is LoadState.Loading,
-                        modifier = Modifier
-                            .fillMaxSize()
-//                            .padding(paddingValues)
-                    ) {
-                        if (it) {
-                            CircularProgressIndicator(
-                                modifier = Modifier
-                                    .size(45.dp)
-//                                    .align(Alignment.Center)
-                            )
-                        } else {
-                            DiscoveryScreen(
-                                characters = characters
-                            )
-                        }
-                    }
+
+                    DiscoveryScreen(
+                        characters = characters
+                    )
                 }
             }
         }
