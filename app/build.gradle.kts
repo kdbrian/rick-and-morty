@@ -107,6 +107,9 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
 
+    // google fonts
+    implementation(libs.ui.text.google.fonts)
+
     //hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

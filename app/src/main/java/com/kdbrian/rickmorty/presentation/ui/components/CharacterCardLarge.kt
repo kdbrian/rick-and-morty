@@ -1,6 +1,6 @@
 package com.kdbrian.rickmorty.presentation.ui.components
 
- import android.R.attr.fontFamily
+import android.R.attr.fontFamily
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,10 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -39,6 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.kdbrian.rickmorty.R
 import com.kdbrian.rickmorty.domain.model.CharacterEntity
 import com.kdbrian.rickmorty.presentation.ui.theme.Kavoon
 import com.kdbrian.rickmorty.presentation.ui.theme.RickMortyTheme
@@ -49,7 +52,7 @@ import com.kdbrian.rickmorty.util.shimmer
 fun CharacterCardLarge(
     modifier: Modifier = Modifier,
     brush: Brush? = null,
-    characterEntity: CharacterEntity,
+    characterEntity: CharacterEntity = CharacterEntity.sampleCharacter,
     imagePlaceHolder: Int? = null,
 ) {
 
@@ -112,7 +115,7 @@ fun CharacterCardLarge(
                 .align(Alignment.BottomCenter)
                 .fillMaxSize()
                 .safeDrawingPadding()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
+                .padding(/*horizontal = 16.dp,*/ vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
 
@@ -126,10 +129,9 @@ fun CharacterCardLarge(
                     .clip(
                         RectangleShape
                     )
-                    .shadow(
-                        8.dp,
+                    .dropShadow(
+                        shadow = Shadow(8.dp, color.value),
                         shape = RectangleShape,
-                        ambientColor = color.value
                     )
             ) {
                 AsyncImage(
@@ -150,25 +152,26 @@ fun CharacterCardLarge(
             BasicText(
                 text = characterEntity.name,
                 autoSize = TextAutoSize.StepBased(
-                    minFontSize = 72.sp,
-                    maxFontSize = 96.sp,
-                    stepSize = 16.sp
+                    minFontSize = 48.sp,
+                    maxFontSize = 64.sp,
+                    stepSize = 12.sp
                 ),
                 style = TextStyle(
                     fontFamily = Kavoon,
-                    lineHeight = 96.sp,
+                    lineHeight = 48.sp,
                     color = color.value,
                 ),
                 modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
                     .background(
+                        Color.Black.copy(.65f),
+                        shape = RectangleShape
+                    ).background(
                         color = color.value.copy(.15f),
                         shape = RectangleShape
                     )
-                    .background(
-                        Color.Black.copy(.15f),
-                        shape = RectangleShape
-                    )
-                    .padding(8.dp)
+//                    .padding(8.dp)
             )
         }
 
@@ -180,8 +183,8 @@ fun CharacterCardLarge(
 fun CharacterCardLargePrev() {
     RickMortyTheme {
 
-//        CharacterCardLarge(
-//            imagePlaceHolder = R.drawable.placeholder
-//        )
+        CharacterCardLarge(
+            imagePlaceHolder = R.drawable.placeholder
+        )
     }
 }
