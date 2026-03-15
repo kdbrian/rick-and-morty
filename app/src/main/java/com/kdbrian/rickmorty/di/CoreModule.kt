@@ -35,11 +35,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
 import javax.inject.Singleton
 
-private const val TAG = "CoreModule"
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class CoreModule {
+object CoreModule {
 
 
     @Provides
@@ -192,13 +191,6 @@ abstract class CoreModule {
         )
     }
 
-
-
-    @Binds
-    @Singleton
-    abstract fun providesAppCounterRepo(
-        appCounterRepoImpl: AppCounterRepoImpl
-    ): AppCounterRepo
 
 
 }

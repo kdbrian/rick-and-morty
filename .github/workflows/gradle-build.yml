@@ -1,0 +1,96 @@
+name: Gradle Build
+
+on:
+  push:
+    branches: [main, backup]
+  pull_request:
+    branches: [ main, koin, dagger-hilt, master ]
+    
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: 'Build flavor'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      ENV: ${{ secrets.ENV }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+
+      - name: Decode google-services.json
+        run: |
+          echo $GOOGLE_SERVICES_JSON | base64 --decode > android/app/google-services.json
+
+      - name: Set Flavor
+        id: flavor
+        run: |
+          FLAVOR="${{ github.event.inputs.flavor || 'dev' }}"
+          echo "CAP_FLAVOR=${FLAVOR^}" >> $GITHUB_OUTPUT
+
+      - name: Extract App Version
+        id: version
+        run: |
+          VERSION_NAME=$(./gradlew -q :app:properties | grep "versionName:" | awk '{print $2}')
+          VERSION_CODE=$(./gradlew -q :app:properties | grep "versionCode:" | awk '{print $2}')
+          echo "versionName=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "versionCode=$VERSION_CODE" >> $GITHUB_OUTPUT
+
+      - name: Clean
+        run: ./gradlew clean
+
+      - name: Build APK
+        run: ./gradlew assemble${{ steps.flavor.outputs.CAP_FLAVOR }}Release
+
+      - name: Run unit tests
+        run: ./gradlew test${{ steps.flavor.outputs.CAP_FLAVOR }}DebugUnitTest
+
+
+      - name: Get Short SHA
+        id: short_sha
+        run: echo "short=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
+
+
+#      - name: Notify Slack
+#        if: always()
+#        uses: rtCamp/action-slack-notify@v2
+#        env:
+#          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_DEV }}
+#          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
+#          SLACK_TITLE: "${{ job.status == 'success' && '✅ New App Build is Ready!' || '❌ App Build Failed' }}"
+#          SLACK_MESSAGE: |
+#            📢 *App Build Update*
+#
+#            🌿 *Branch:* `${{ github.ref_name }}`
+#            📱 *Environment:* `${CAP_FLAVOR}`
+#            🏷️ *Version:* `v${{ steps.version.outputs.versionName }} (Code: ${{ steps.version.outputs.versionCode }})`
+#            \n
+#            ${{ job.status == 'success' && format(
+#              '✅ The app was built successfully and is ready for testing!\n🔗 [Click here to download the APK](https://github.com/{0}/actions/runs/{1})',
+#              github.repository,
+#              github.run_id
+#            ) || format(
+#              '⚠️ The app build didn’t go through.\n 🔍 [Check the build logs here](https://github.com/{0}/actions/runs/{1})',
+#              github.repository,
+#              github.run_id
+#            ) }}

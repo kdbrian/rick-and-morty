@@ -10,6 +10,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -59,6 +62,7 @@ import com.kdbrian.rickmorty.util.shimmer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import timber.log.Timber
 
 
 class DiscoveryScreenPreviewParameterProvider : PreviewParameterProvider<List<CharacterEntity>> {
@@ -180,7 +184,17 @@ fun DiscoveryScreen(
 
                             currentCharacter = character
                             Box(
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onLongPress = { offset ->
+                                                Timber.tag("detectTapGestures").d("x -> ${offset.x}")
+                                                Timber.tag("detectTapGestures").d("y -> ${offset.y}")
+                                                Timber.tag("detectTapGestures").d("packed -> ${offset.packedValue}")
+                                            }
+                                        )
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
 

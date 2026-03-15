@@ -1,0 +1,291 @@
+name: Detekt Code Analysis
+
+on:
+  workflow_run:
+    workflows:
+      - "Gradle Build"
+
+concurrency:
+  group: detekt-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  # ──────────────────────────────────────────────
+  # JOB 1 — Generate or restore baseline
+  # ──────────────────────────────────────────────
+  generate-baseline:
+    name: Generate Detekt Baseline
+    runs-on: ubuntu-latest
+    # Run when: manually triggered with regenerate flag,
+    #            OR baseline file does not exist yet.
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.regenerate_baseline == 'true' ||
+      github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant Gradle execute permission
+        run: chmod +x gradlew
+
+      - name: Check if baseline exists
+        id: baseline_check
+        run: |
+          if [ -f "config/detekt/baseline.xml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate detekt baseline
+        # Always generate if: forced via dispatch, or baseline is missing
+        if: |
+          (github.event_name == 'workflow_dispatch' && inputs.regenerate_baseline == 'true') ||
+          steps.baseline_check.outputs.exists == 'false'
+        run: |
+          mkdir -p config/detekt
+          ./gradlew detektBaseline \
+            --continue \
+            -Pdetekt.baseline=config/detekt/baseline.xml \
+            --stacktrace
+
+      - name: Commit and push baseline
+        if: |
+          (github.event_name == 'workflow_dispatch' && inputs.regenerate_baseline == 'true') ||
+          steps.baseline_check.outputs.exists == 'false'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci: regenerate detekt baseline [skip ci]"
+          file_pattern: "config/detekt/baseline.xml"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+  # ──────────────────────────────────────────────
+  # JOB 2 — Run detekt verification
+  # ──────────────────────────────────────────────
+  detekt-verify:
+    name: Detekt Verify
+    runs-on: ubuntu-latest
+    needs: [ generate-baseline ]
+    # Run even if generate-baseline is skipped (PRs etc.)
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant Gradle execute permission
+        run: chmod +x gradlew
+
+      - name: Run detekt
+        id: detekt_run
+        run: |
+          set +e
+          ./gradlew detekt \
+            --continue \
+            -Pdetekt.baseline=config/detekt/baseline.xml \
+            --stacktrace 2>&1 | tee detekt_output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+          set -e
+
+      - name: Upload SARIF report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "**/build/reports/detekt/*.sarif"
+        continue-on-error: true   # SARIF upload is best-effort
+
+      - name: Upload detekt HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-report-${{ github.run_number }}
+          path: |
+            **/build/reports/detekt/
+          retention-days: 30
+
+      - name: Parse detekt results
+        if: always()
+        id: parse_results
+        run: |
+          # Count issues across all XML reports
+          total=0
+          for f in $(find . -path "*/build/reports/detekt/*.xml" ! -name "baseline.xml"); do
+            count=$(grep -c '<error ' "$f" 2>/dev/null || echo 0)
+            total=$((total + count))
+          done
+          echo "issue_count=$total" >> $GITHUB_OUTPUT
+
+          # Extract a short summary (first 20 violations)
+          summary=$(grep -h "error " **/build/reports/detekt/*.xml 2>/dev/null \
+            | sed 's/.*message="\([^"]*\)".*/- \1/' \
+            | head -20 || echo "No issues found")
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$summary" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # ── PR annotation via reviewdog ────────────
+      - name: Annotate PR with detekt findings
+        if: github.event_name == 'pull_request' && always()
+        uses: reviewdog/action-detekt@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          filter_mode: added           # only report NEW issues on the PR diff
+          fail_on_error: false
+        continue-on-error: true
+
+      - name: Fail if detekt found issues
+        if: steps.detekt_run.outputs.exit_code != '0'
+        run: |
+          echo "❌ Detekt found ${{ steps.parse_results.outputs.issue_count }} issue(s)."
+          exit 1
+
+  # ──────────────────────────────────────────────
+  # JOB 3 — Create / update a tracking GitHub Issue
+  # ──────────────────────────────────────────────
+  manage-issue:
+    name: Manage Detekt Issue Tracker
+    runs-on: ubuntu-latest
+    needs: [ detekt-verify ]
+    # Only run on pushes to main/develop (not every PR)
+    if: |
+      always() &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' ||
+       github.ref == 'refs/heads/master' ||
+       github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download detekt reports
+        uses: actions/download-artifact@v4
+        with:
+          name: detekt-report-${{ github.run_number }}
+          path: detekt-reports
+        continue-on-error: true
+
+      - name: Parse detekt XML for issue body
+        id: issue_body
+        run: |
+          python3 - << 'PYEOF'
+          import os, glob, xml.etree.ElementTree as ET
+          from collections import defaultdict
+
+          reports = glob.glob("detekt-reports/**/*.xml", recursive=True)
+          issues_by_rule = defaultdict(list)
+
+          for report in reports:
+              try:
+                  tree = ET.parse(report)
+                  for file_el in tree.getroot().findall('file'):
+                      fname = file_el.get('name', '').replace(os.getcwd() + '/', '')
+                      for err in file_el.findall('error'):
+                          rule = err.get('source', 'unknown').split('.')[-1]
+                          line = err.get('line', '?')
+                          msg  = err.get('message', '')
+                          issues_by_rule[rule].append(f"  - `{fname}:{line}` — {msg}")
+              except Exception:
+                  pass
+
+          total = sum(len(v) for v in issues_by_rule.values())
+          lines = [
+              f"## 🔍 Detekt Report — {total} issue(s)",
+              f"> Branch: `{os.environ.get('GITHUB_REF_NAME', 'unknown')}` "
+              f"| Commit: `{os.environ.get('GITHUB_SHA', '')[:7]}`",
+              f"> Run: [{os.environ.get('GITHUB_RUN_NUMBER')}]"
+              f"({os.environ.get('GITHUB_SERVER_URL')}/{os.environ.get('GITHUB_REPOSITORY')}"
+              f"/actions/runs/{os.environ.get('GITHUB_RUN_ID')})",
+              "",
+          ]
+
+          if issues_by_rule:
+              lines.append("### Issues by Rule")
+              for rule, items in sorted(issues_by_rule.items()):
+                  lines.append(f"<details><summary><b>{rule}</b> ({len(items)})</summary>\n")
+                  lines.extend(items[:50])   # cap at 50 per rule to keep issue readable
+                  if len(items) > 50:
+                      lines.append(f"  … and {len(items)-50} more")
+                  lines.append("</details>")
+          else:
+              lines.append("✅ No new issues detected (all issues are in the baseline).")
+
+          body = "\n".join(lines)
+          # Write to env file safely (handles multi-line)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write("total_count=" + str(total) + "\n")
+              f.write("body<<BODY_EOF\n" + body + "\nBODY_EOF\n")
+          PYEOF
+
+      - name: Find existing detekt tracking issue
+        id: find_issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          issue_number=$(gh issue list \
+            --label "detekt" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty' \
+            --repo "${{ github.repository }}")
+          echo "number=${issue_number}" >> $GITHUB_OUTPUT
+
+      - name: Create detekt tracking issue (if none exists)
+        if: steps.find_issue.outputs.number == '' && steps.issue_body.outputs.total_count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "🔍 Detekt: Code Quality Issues Tracker" \
+            --body "${{ steps.issue_body.outputs.body }}" \
+            --label "detekt,technical-debt" \
+            --repo "${{ github.repository }}"
+
+      - name: Update existing detekt tracking issue
+        if: steps.find_issue.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit "${{ steps.find_issue.outputs.number }}" \
+            --body "${{ steps.issue_body.outputs.body }}" \
+            --repo "${{ github.repository }}"
+
+          # Add a comment summarising this run
+          gh issue comment "${{ steps.find_issue.outputs.number }}" \
+            --body "🔄 **Updated** by run [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) — ${{ steps.issue_body.outputs.total_count }} issue(s) remaining." \
+            --repo "${{ github.repository }}"
+
+      - name: Close tracking issue if no issues remain
+        if: steps.find_issue.outputs.number != '' && steps.issue_body.outputs.total_count == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue close "${{ steps.find_issue.outputs.number }}" \
+            --comment "✅ All detekt issues resolved! Closing this tracker." \
+            --repo "${{ github.repository }}"

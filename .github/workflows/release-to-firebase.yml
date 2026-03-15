@@ -1,0 +1,376 @@
+name: Release Beta APK to Firebase App Distribution
+
+on:
+  release:
+    types: [published]
+
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: Build flavor
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      version_tag:
+        description: "Version tag (e.g. v1.2.3) — leave empty to use current branch/ref"
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+
+    outputs:
+      version_tag: ${{ steps.meta.outputs.version_tag }}
+      flavor:      ${{ steps.meta.outputs.flavor }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve flavor + version
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            FLAVOR="prod"
+            VERSION_TAG="${{ github.event.release.tag_name }}"
+          else
+            FLAVOR="${{ github.event.inputs.flavor }}"
+            # Prefer explicit input tag, fall back to ref name
+            INPUT_TAG="${{ github.event.inputs.version_tag }}"
+            VERSION_TAG="${INPUT_TAG:-$GITHUB_REF_NAME}"
+          fi
+
+          [[ "$VERSION_TAG" == v* ]] || VERSION_TAG="v$VERSION_TAG"
+
+          echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+          echo "flavor=$FLAVOR"           >> $GITHUB_OUTPUT
+
+          echo "Version tag : $VERSION_TAG"
+          echo "Flavor      : $FLAVOR"
+
+      - name: Ensure git tag exists
+        id: tag_check
+        env:
+          VERSION_TAG: ${{ steps.meta.outputs.version_tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Check if the tag exists locally
+          if git rev-parse --verify "$VERSION_TAG" >/dev/null 2>&1; then
+            echo "✅ Tag $VERSION_TAG exists"
+            echo "tag_created=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Tag doesn't exist — check if a GitHub Release exists for it
+          RELEASE_EXISTS=$(gh api "repos/${REPO}/releases/tags/${VERSION_TAG}" \
+            --jq '.id' 2>/dev/null || echo "")
+
+          if [ -n "$RELEASE_EXISTS" ]; then
+            echo "✅ GitHub Release already exists for $VERSION_TAG (id: $RELEASE_EXISTS)"
+            echo "tag_created=false" >> $GITHUB_OUTPUT
+            # Fetch the tag from remote
+            git fetch --tags
+            exit 0
+          fi
+
+          # Neither tag nor release found — create both
+          echo "⚠️  Tag $VERSION_TAG not found — creating tag and GitHub Release..."
+
+          # Create the tag on the current HEAD
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$VERSION_TAG"
+          git push origin "$VERSION_TAG"
+
+          # Create a draft GitHub Release (will be populated with notes later)
+          gh release create "$VERSION_TAG" \
+            --title "$VERSION_TAG" \
+            --notes "Release $VERSION_TAG — release notes will be added shortly." \
+            --draft=false \
+            --repo "$REPO"
+
+          echo "✅ Created tag and release for $VERSION_TAG"
+          echo "tag_created=true" >> $GITHUB_OUTPUT
+
+      - name: Wait for release-notes workflow or generate inline
+        env:
+          VERSION_TAG: ${{ steps.meta.outputs.version_tag }}
+          FLAVOR:      ${{ steps.meta.outputs.flavor }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NOTES_FILE="release_notes/${VERSION_TAG}_${FLAVOR}.md"
+          echo "File: $NOTES_FILE" 
+          REPO="${{ github.repository }}"
+          WORKFLOW_FILE="release-notes.yml"
+
+          # ── 1. Notes already committed — nothing to do ──────────────────────
+          if [ -f "$NOTES_FILE" ]; then
+            echo "✅ Notes already present: $NOTES_FILE"
+            exit 0
+          fi
+
+          # ── 2. Check if the release-notes workflow is in progress for this tag
+          echo "🔍 Checking for an active release-notes run for $VERSION_TAG..."
+
+          ACTIVE_RUN_ID=$(gh api \
+            "repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?per_page=10" \
+            --jq "
+              .workflow_runs[]
+              | select(
+                  .head_branch == \"$VERSION_TAG\" and
+                  (.status == \"in_progress\" or .status == \"queued\" or .status == \"waiting\")
+                )
+              | .id" \
+            | head -n 1)
+
+          if [ -n "$ACTIVE_RUN_ID" ]; then
+            echo "⏳ Found active run #${ACTIVE_RUN_ID} — waiting..."
+
+            MAX_WAIT=900
+            ELAPSED=0
+            INTERVAL=20
+
+            while [ $ELAPSED -lt $MAX_WAIT ]; do
+              CONCLUSION=$(gh api "repos/${REPO}/actions/runs/${ACTIVE_RUN_ID}" \
+                --jq '.conclusion // empty')
+              STATUS=$(gh api "repos/${REPO}/actions/runs/${ACTIVE_RUN_ID}" \
+                --jq '.status')
+
+              echo "   Status: $STATUS | Conclusion: ${CONCLUSION:-(pending)} | Elapsed: ${ELAPSED}s"
+
+              if [ "$STATUS" = "completed" ]; then
+                if [ "$CONCLUSION" = "success" ]; then
+                  echo "✅ release-notes workflow completed"
+                  git pull --rebase origin "$(git rev-parse --abbrev-ref HEAD)" || true
+                else
+                  echo "⚠️  release-notes workflow ended with: $CONCLUSION — falling back to inline"
+                fi
+                break
+              fi
+
+              sleep $INTERVAL
+              ELAPSED=$((ELAPSED + INTERVAL))
+            done
+
+            [ $ELAPSED -ge $MAX_WAIT ] && echo "⚠️  Timed out — falling back to inline generation"
+          else
+            echo "ℹ️  No active release-notes run found — generating inline"
+          fi
+
+          # ── 3. Generate inline if notes are still missing ───────────────────
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "⚙️  Generating release notes inline..."
+            pip install requests --quiet
+
+            # Exact-match the tag, then take the next one in the sorted list
+            PREV_TAG=$(git tag --sort=-v:refname               | grep -Fx "$VERSION_TAG" -A1               | tail -n1)
+            # Guard: if grep returned the same tag (no next entry), clear it
+            [ "$PREV_TAG" = "$VERSION_TAG" ] && PREV_TAG=""
+            [ -z "$PREV_TAG" ] && PREV_TAG=$(git describe --tags --abbrev=0 "$VERSION_TAG"^ 2>/dev/null || true)
+            echo "Previous tag: ${PREV_TAG:-(none)}"
+
+            ARGS=("$VERSION_TAG" --api-key "$GEMINI_API_KEY" --flavor "$FLAVOR")
+            [ -n "$PREV_TAG" ] && ARGS+=(--from-tag "$PREV_TAG")
+
+            mkdir -p release_notes
+            python .github/scripts/release_notes.py "${ARGS[@]}"
+          fi
+
+          # ── 4. Hard fail if still missing ───────────────────────────────────
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "❌ Could not obtain release notes for $VERSION_TAG ($FLAVOR)" >&2
+            exit 1
+          fi
+
+          echo "✅ Notes ready: $NOTES_FILE"
+
+
+      - name: Commit notes if generated inline
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add release_notes/ || true
+
+          if git diff --cached --quiet; then
+            echo "ℹ️  Nothing new to commit"
+          else
+            git commit -m "chore: release notes for ${{ steps.meta.outputs.version_tag }} [skip ci]"
+            git push || true
+          fi
+
+  # ── Build + ship ────────────────────────────────────────────────────────────
+  release:
+    runs-on: ubuntu-latest
+    needs: prepare
+
+    env:
+      VERSION_TAG: ${{ needs.prepare.outputs.version_tag }}
+      FLAVOR:      ${{ needs.prepare.outputs.flavor }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Resolve FLAVOR_CAP
+        run: |
+          echo "FLAVOR_CAP=$(echo $FLAVOR | sed 's/./\u&/')" >> $GITHUB_ENV
+
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Read version
+        run: |
+          OUTPUT=$(./gradlew -q printVersion)
+          VERSION_CODE=$(echo "$OUTPUT" | grep VERSION_CODE | cut -d '=' -f2)
+          VERSION_NAME=$(echo "$OUTPUT" | grep VERSION_NAME | cut -d '=' -f2)
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+
+      - name: Read release notes
+        id: notes
+        run: |
+          NOTES_FILE="release_notes/${VERSION_TAG}_${FLAVOR}.md"
+          
+          echo "File: $NOTES_FILE"
+
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "❌ Release notes missing: $NOTES_FILE" >&2
+            exit 1
+          fi
+
+          head -c 15000 "$NOTES_FILE" > /tmp/release_notes.txt
+          
+          echo "Notes : $(cat /tmp/release_notes.txt)"
+
+          PREVIEW=$(head -c 500 "$NOTES_FILE")
+          echo "Notes Prev : $PREVIEW"
+          echo "notes_file=/tmp/release_notes.txt" >> $GITHUB_OUTPUT
+          echo "preview<<EOF"    >> $GITHUB_OUTPUT
+          echo "$PREVIEW"        >> $GITHUB_OUTPUT
+          echo "EOF"             >> $GITHUB_OUTPUT
+
+      - name: Build APK
+        run: ./gradlew assemble${{ env.FLAVOR_CAP }}Debug
+
+      - name: Locate APK
+        run: |
+          APK_PATH=$(find app -type f -name "FarmConnect_${FLAVOR}_*.apk" | head -n 1)
+
+          if [ -z "$APK_PATH" ]; then
+            echo "❌ APK not found for flavor: $FLAVOR" >&2
+            exit 1
+          fi
+
+          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+
+      - name: Upload to Firebase
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          testers: benjamingathukumuthoni@gmail.com,briankidiga.dev@gmail.com
+          file: ${{ env.APK_PATH }}
+          releaseNotes: ${{ steps.notes.outputs.notes_file }}
+
+      - name: Notify Slack — success
+        if: success()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "✅ FarmConnect ${{ env.VERSION_TAG }} deployed to Firebase",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": { "type": "plain_text", "text": "✅ Firebase Release Successful", "emoji": true }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*Version:*\n${{ env.VERSION_TAG }} (`${{ env.VERSION_NAME }}`)" },
+                    { "type": "mrkdwn", "text": "*Flavor:*\n${{ env.FLAVOR }}" },
+                    { "type": "mrkdwn", "text": "*Testers:*\nbenjamingathukumuthoni, briankidiga.dev" }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": { "type": "mrkdwn", "text": "*Release notes preview:*\n```${{ steps.notes.outputs.preview }}```" }
+                },
+                {
+                  "type": "actions",
+                  "elements": [{
+                    "type": "button",
+                    "text": { "type": "plain_text", "text": "View Workflow Run", "emoji": true },
+                    "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify Slack — failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "❌ FarmConnect ${{ env.VERSION_TAG }} release FAILED",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": { "type": "plain_text", "text": "❌ Firebase Release Failed", "emoji": true }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*Version:*\n${{ env.VERSION_TAG }}" },
+                    { "type": "mrkdwn", "text": "*Flavor:*\n${{ env.FLAVOR }}" },
+                    { "type": "mrkdwn", "text": "*Triggered by:*\n${{ github.actor }}" }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [{
+                    "type": "button",
+                    "text": { "type": "plain_text", "text": "View Failed Run", "emoji": true },
+                    "style": "danger",
+                    "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_DEV }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

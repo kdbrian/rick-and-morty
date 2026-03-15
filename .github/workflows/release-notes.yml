@@ -1,0 +1,182 @@
+name: Generate Release Notes
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_call:
+    inputs:
+      tag:
+        description: "Version tag to generate notes for (e.g. v1.2.3)"
+        required: true
+        type: string
+      flavor:
+        description: "Single flavor to generate (omit for all flavors)"
+        required: false
+        type: string
+        default: ""
+    secrets:
+      GEMINI_API_KEY:
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version tag (e.g. v1.2.3)"
+        required: true
+        type: string
+      flavor:
+        description: "Flavor (leave empty for all)"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag and flavor
+        id: resolve
+        run: |
+          # workflow_call and workflow_dispatch supply inputs.tag; push uses GITHUB_REF_NAME
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+
+          [[ "$TAG" == v* ]] || TAG="v$TAG"
+
+          FLAVOR="${{ inputs.flavor }}"
+
+          echo "TAG=$TAG"       >> $GITHUB_ENV
+          echo "FLAVOR=$FLAVOR" >> $GITHUB_ENV
+          echo "tag=$TAG"       >> $GITHUB_OUTPUT
+          echo "flavor=$FLAVOR" >> $GITHUB_OUTPUT
+
+          echo "Tag    : $TAG"
+          echo "Flavor : ${FLAVOR:-all}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Generate release notes
+        id: generate
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          mkdir -p release_notes
+
+          if [ -n "${{ env.FLAVOR }}" ]; then
+            python .github/scripts/release_notes.py "${{ env.TAG }}" \
+              --flavor "${{ env.FLAVOR }}" \
+              --api-key "$GEMINI_API_KEY"
+          else
+            python .github/scripts/release_notes.py "${{ env.TAG }}" \
+              --all-flavors \
+              --api-key "$GEMINI_API_KEY"
+          fi
+
+          echo "Generated files:"
+          ls -1 release_notes/
+
+          echo "prod_notes=release_notes/${{ env.TAG }}_prod.md" >> $GITHUB_OUTPUT
+          echo "dev_notes=release_notes/${{ env.TAG }}_dev.md"   >> $GITHUB_OUTPUT
+
+      - name: Commit release notes to repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch --all
+
+          BRANCH=$(git branch -r --contains "${{ env.TAG }}" \
+            | grep -v HEAD \
+            | sed 's|origin/||' \
+            | tr -d ' ' \
+            | head -n 1)
+
+          if [ -z "$BRANCH" ]; then
+            echo "⚠️  Could not detect branch for ${{ env.TAG }} — defaulting to main"
+            BRANCH="main"
+          fi
+
+          echo "Branch: $BRANCH"
+          git checkout "$BRANCH"
+
+          git add release_notes/
+
+          if git diff --cached --quiet; then
+            echo "ℹ️  No new notes to commit."
+          else
+            git commit -m "chore: release notes for ${{ env.TAG }} [skip ci]"
+            git push origin "$BRANCH"
+          fi
+
+      - name: Build GitHub Release body
+        # Combine prod notes (user-facing) + dev notes (internal) into one release body.
+        # Prod notes are shown first; dev notes are collapsed in a <details> block
+        # so they're accessible but don't clutter the release page.
+        if: github.event_name == 'push'
+        id: body
+        run: |
+          PROD_FILE="${{ steps.generate.outputs.prod_notes }}"
+          DEV_FILE="${{ steps.generate.outputs.dev_notes }}"
+          COMBINED="/tmp/release_body.md"
+
+          # Start with prod notes (always present after --all-flavors)
+          cat "$PROD_FILE" > "$COMBINED"
+
+          # Append dev notes in a collapsible section if the file exists
+          if [ -f "$DEV_FILE" ]; then
+            cat >> "$COMBINED" << 'MARKDOWN'
+
+---
+
+<details>
+<summary>🔧 Developer Notes (internal)</summary>
+
+MARKDOWN
+            cat "$DEV_FILE" >> "$COMBINED"
+            echo "" >> "$COMBINED"
+            echo "</details>" >> "$COMBINED"
+          fi
+
+          echo "combined=$COMBINED" >> $GITHUB_OUTPUT
+
+      - name: Create or update GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.TAG }}
+          body_path: ${{ steps.body.outputs.combined }}
+          # Attach all flavor notes as downloadable assets on the release
+          files: |
+            release_notes/${{ env.TAG }}_prod.md
+            release_notes/${{ env.TAG }}_staging.md
+            release_notes/${{ env.TAG }}_dev.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release notes as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release_notes_${{ env.TAG }}
+          path: release_notes/
+          if-no-files-found: warn
