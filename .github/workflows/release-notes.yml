@@ -146,16 +146,16 @@ jobs:
           if [ -f "$DEV_FILE" ]; then
             cat >> "$COMBINED" << 'MARKDOWN'
 
----
-
-<details>
-<summary>🔧 Developer Notes (internal)</summary>
-
-MARKDOWN
-            cat "$DEV_FILE" >> "$COMBINED"
-            echo "" >> "$COMBINED"
-            echo "</details>" >> "$COMBINED"
-          fi
+          ---
+          
+          <details>
+          <summary>🔧 Developer Notes (internal)</summary>
+          
+          MARKDOWN
+                      cat "$DEV_FILE" >> "$COMBINED"
+                      echo "" >> "$COMBINED"
+                      echo "</details>" >> "$COMBINED"
+                    fi
 
           echo "combined=$COMBINED" >> $GITHUB_OUTPUT
 
