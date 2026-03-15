@@ -10,7 +10,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +56,7 @@ import com.kdbrian.rickmorty.presentation.ui.components.CharacterCardLarge
 import com.kdbrian.rickmorty.presentation.ui.components.CharacterFab
 import com.kdbrian.rickmorty.presentation.ui.theme.RickMortyTheme
 import com.kdbrian.rickmorty.presentation.ui.util.ThemePreviews
+import com.kdbrian.rickmorty.util.AppEvent
 import com.kdbrian.rickmorty.util.IDLE_CHARACTER_SWAP_DELAY
 import com.kdbrian.rickmorty.util.shimmer
 import kotlinx.coroutines.delay
@@ -76,6 +76,9 @@ class DiscoveryScreenPreviewParameterProvider : PreviewParameterProvider<List<Ch
 @Composable
 fun DiscoveryScreen(
     characters: Flow<PagingData<CharacterEntity>>,
+    autoPlay: Boolean = false,
+    onEvent: (AppEvent) -> Unit = {},
+    autoPlaySpeeed: Long = IDLE_CHARACTER_SWAP_DELAY
 ) {
 
     val pagingItems = characters.collectAsLazyPagingItems()
@@ -98,13 +101,12 @@ fun DiscoveryScreen(
         }
     }
 
-    var currentCharacter by remember { mutableStateOf<CharacterEntity?>(null) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(IDLE_CHARACTER_SWAP_DELAY)
-            pagerState.scrollToPage(pagerState.currentPage.inc())
-        }
+    LaunchedEffect(autoPlay) {
+        if (autoPlay)
+            while (true) {
+                delay(autoPlaySpeeed)
+                pagerState.scrollToPage(pagerState.currentPage.inc())
+            }
     }
 
     AnimatedContent(
@@ -112,12 +114,12 @@ fun DiscoveryScreen(
     ) {
         when (it) {
             is LoadState.Error -> {
-                    Text(
-                        "Error : ${it.error.message}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxSize(),
-                        textAlign = TextAlign.Center
-                    )
+                Text(
+                    "Error : ${it.error.message}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.fillMaxSize(),
+                    textAlign = TextAlign.Center
+                )
             }
 
             LoadState.Loading -> {
@@ -142,10 +144,11 @@ fun DiscoveryScreen(
                             when (it) {
                                 true -> {
                                     CharacterFab(
-                                        characterId = currentCharacter?.id ?: 1,
+                                        characterId = 1,
                                         onClose = {
                                             isExpanded = false
-                                        }
+                                        },
+                                        onEvent = onEvent
                                     )
                                 }
 
@@ -182,16 +185,19 @@ fun DiscoveryScreen(
                         pagingItems[it]?.let { character ->
 
 
-                            currentCharacter = character
+                            onEvent(AppEvent.CurrentCharacter(character))
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .pointerInput(Unit) {
                                         detectTapGestures(
                                             onLongPress = { offset ->
-                                                Timber.tag("detectTapGestures").d("x -> ${offset.x}")
-                                                Timber.tag("detectTapGestures").d("y -> ${offset.y}")
-                                                Timber.tag("detectTapGestures").d("packed -> ${offset.packedValue}")
+                                                Timber.tag("detectTapGestures")
+                                                    .d("x -> ${offset.x}")
+                                                Timber.tag("detectTapGestures")
+                                                    .d("y -> ${offset.y}")
+                                                Timber.tag("detectTapGestures")
+                                                    .d("packed -> ${offset.packedValue}")
                                             }
                                         )
                                     },
@@ -231,7 +237,8 @@ fun DiscoveryScreenPrev(
 ) {
     RickMortyTheme {
         DiscoveryScreen(
-            characters = MutableStateFlow(PagingData.from(characters))
+            characters = MutableStateFlow(PagingData.from(characters)),
+            autoPlaySpeeed = IDLE_CHARACTER_SWAP_DELAY
         )
     }
 }

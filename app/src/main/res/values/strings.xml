@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">RickMorty</string>
+    <string name="app_settings">App Settings</string>
+    <string name="auto_play">Auto-play</string>
 </resources>

@@ -14,6 +14,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -45,6 +46,7 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             val characters = mainViewModel.characters()
+            val mainUiState = mainViewModel.mainUiState.collectAsState()
             val snackbarHostState = remember { SnackbarHostState() }
 
 
@@ -60,7 +62,9 @@ class MainActivity : ComponentActivity() {
                 ) { _ ->
 
                     HomeScreen(
-                        characters = characters
+                        characters = characters,
+                        mainUiState = mainUiState.value,
+                        onEvent = mainViewModel::onEvent
                     )
                 }
             }

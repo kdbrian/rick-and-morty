@@ -1,5 +1,6 @@
 package com.kdbrian.rickmorty.presentation.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -52,7 +53,9 @@ fun CharacterFab(
             Icon(
                 Icons.Rounded.PlayCircleOutline ,
                 contentDescription = "Toggle Autoplay",
-                tint = contentColor,
+                tint = animateColorAsState(
+                    if(isAutoPlay) Color(0xFFF40000) else contentColor
+                ).value,
                 modifier = Modifier.padding(4.dp)
             )
         }
