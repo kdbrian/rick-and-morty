@@ -56,6 +56,9 @@ jobs:
           echo "versionName=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "versionCode=$VERSION_CODE" >> $GITHUB_OUTPUT
 
+      - name: Grant run permission
+        run: chmod +x gradlew
+
       - name: Clean
         run: ./gradlew clean
 
