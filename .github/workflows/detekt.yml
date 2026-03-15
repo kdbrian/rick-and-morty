@@ -1,9 +1,10 @@
 name: Detekt Code Analysis
 
 on:
-  workflow_run:
-    workflows:
-      - "Gradle Build"
+  push:
+    branches: [master]
+  pull_request:
+    branches: [ master ]
 
 concurrency:
   group: detekt-${{ github.ref }}
